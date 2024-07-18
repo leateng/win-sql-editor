@@ -90,6 +90,34 @@ impl<'a> ScintillaEditBuilder<'a> {
             .parent(Some(parent))
             .build()?;
 
+        // 设置字体为 "Segoe UI Emoji"
+        let font = WString::from_str("Segoe UI Emoji");
+        unsafe {
+            winapi::um::winuser::SendMessageW(
+                out.handle.hwnd().unwrap(),
+                SCI_STYLESETFONT,
+                STYLE_DEFAULT as usize,
+                font.as_ptr() as isize,
+            );
+            winapi::um::winuser::SendMessageW(
+                out.handle.hwnd().unwrap(),
+                SCI_STYLESETSIZE,
+                STYLE_DEFAULT as usize,
+                20,
+            );
+        }
+
+        // // Example: set some text with emoji
+        // let text = WString::from_str("Hello, world! 😊🌍");
+        // unsafe {
+        //     winapi::um::winuser::SendMessageW(
+        //         out.handle.hwnd().unwrap(),
+        //         SCI_SETTEXT,
+        //         0,
+        //         text.as_ptr() as isize,
+        //     );
+        // }
+
         Ok(())
     }
 }
@@ -129,72 +157,4 @@ impl ScintillaEdit {
     pub fn forced_flags(&self) -> u32 {
         WS_CHILD
     }
-
-    // pub fn create(parent: &nwg::Window) -> Self {
-    //     let instance = unsafe { winapi::um::libloaderapi::GetModuleHandleW(null_mut()) };
-    //     let class_name = WString::from_str("Scintilla");
-    //
-    //     let hwnd = unsafe {
-    //         winapi::um::winuser::CreateWindowExW(
-    //             0,
-    //             class_name.as_ptr(),
-    //             null_mut(),
-    //             winapi::um::winuser::WS_CHILD | winapi::um::winuser::WS_VISIBLE,
-    //             0,
-    //             0,
-    //             800,
-    //             600,
-    //             parent.handle.hwnd().unwrap(),
-    //             null_mut(),
-    //             instance,
-    //             null_mut(),
-    //         )
-    //     };
-    //
-    //     assert!(!hwnd.is_null(), "Failed to create Scintilla control");
-    //
-    //     let hwnd = nwg::ControlHandle::Hwnd(hwnd);
-    //
-    //     // 设置字体为 "Segoe UI Emoji"
-    //     let font = WString::from_str("Segoe UI Emoji");
-    //     unsafe {
-    //         winapi::um::winuser::SendMessageW(
-    //             hwnd.hwnd().unwrap(),
-    //             SCI_STYLESETFONT,
-    //             STYLE_DEFAULT as usize,
-    //             font.as_ptr() as isize,
-    //         );
-    //         winapi::um::winuser::SendMessageW(
-    //             hwnd.hwnd().unwrap(),
-    //             SCI_STYLESETSIZE,
-    //             STYLE_DEFAULT as usize,
-    //             16,
-    //         );
-    //     }
-    //
-    //     // Example: set some text with emoji
-    //     let text = WString::from_str("Hello, world! 😊🌍");
-    //     unsafe {
-    //         winapi::um::winuser::SendMessageW(
-    //             hwnd.hwnd().unwrap(),
-    //             SCI_SETTEXT,
-    //             0,
-    //             text.as_ptr() as isize,
-    //         );
-    //     }
-    //
-    //     ScintillaEdit { handle: hwnd }
-    // }
 }
-
-// #[derive(Default, NativeUi)]
-// pub struct MyApp {
-//     #[nwg_control(size: (800, 600), position: (300, 300), title: "Scintilla Example")]
-//     #[nwg_events(OnWindowClose: [MyApp::exit])]
-//     window: nwg::Window,
-//
-//     #[nwg_control(parent: window, text: None)]
-//     layout: nwg::Flexbox,
-//
-//     scintilla: ScintillaControl,
-// }
