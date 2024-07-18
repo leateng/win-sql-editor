@@ -50,3 +50,4 @@ async fn main() {
     let app = BasicApp::build_ui(Default::default()).expect("Failed to build UI");
     nwg::dispatch_thread_events();
 }
+

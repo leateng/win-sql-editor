@@ -16,6 +16,16 @@ const SCI_STYLESETSIZE: u32 = 0x2FFB;
 const SCI_SETTEXT: u32 = 0x000C;
 const STYLE_DEFAULT: usize = 32;
 
+extern "C" {
+    pub fn register_window_class() -> bool {
+        unsafe {
+            let instance = winapi::um::libloaderapi::GetModuleHandleW(null_mut());
+            let status = Scintilla_RegisterClasses(h_instance.ptr());
+            return status != 0;
+        }
+    }
+}
+
 pub struct WString {
     inner: Vec<u16>,
 }
@@ -87,11 +97,6 @@ pub struct ScintillaEdit {
 }
 
 impl ScintillaEdit {
-    pub fn regist() {
-        unsafe {
-            let instance = winapi::um::libloaderapi::GetModuleHandleW(null_mut());
-        }
-    }
     pub fn builder<'a>() -> ScintillaEditBuilder<'a> {
         ScintillaEditBuilder {
             text: "",
