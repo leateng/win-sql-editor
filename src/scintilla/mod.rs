@@ -6,9 +6,7 @@ use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
 use std::ptr::null_mut;
 use winapi;
-use winapi::um::winuser::{
-    BS_BITMAP, BS_ICON, BS_NOTIFY, WS_CHILD, WS_DISABLED, WS_TABSTOP, WS_VISIBLE,
-};
+use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_HSCROLL, WS_VISIBLE, WS_VSCROLL};
 
 const SCI_SETCARETLINEVISIBLE: u32 = 0x200A;
 const SCI_STYLESETFONT: u32 = 0x2FF8;
@@ -49,6 +47,7 @@ pub struct ScintillaEditBuilder<'a> {
     text: &'a str,
     size: (i32, i32),
     position: (i32, i32),
+    ex_flags: u32,
     parent: Option<ControlHandle>,
 }
 
@@ -84,7 +83,7 @@ impl<'a> ScintillaEditBuilder<'a> {
             .class_name(out.class_name())
             .forced_flags(out.forced_flags())
             .flags(flags)
-            // .ex_flags(self.ex_flags)
+            .ex_flags(self.ex_flags)
             .size(self.size)
             .position(self.position)
             .text(self.text)
@@ -106,6 +105,7 @@ impl ScintillaEdit {
             text: "",
             size: (100, 25),
             position: (0, 0),
+            ex_flags: 0,
             parent: None,
         }
     }
@@ -116,8 +116,13 @@ impl ScintillaEdit {
     }
 
     /// Winapi base flags used during window creation
+    pub fn ex_flags(&self) -> u32 {
+        WS_EX_CLIENTEDGE
+    }
+
+    /// Winapi base flags used during window creation
     pub fn flags(&self) -> u32 {
-        WS_VISIBLE | WS_TABSTOP | BS_NOTIFY
+        WS_VISIBLE
     }
 
     /// Winapi flags required by the control
@@ -192,36 +197,4 @@ impl ScintillaEdit {
 //     layout: nwg::Flexbox,
 //
 //     scintilla: ScintillaControl,
-// }
-
-// impl MyApp {
-//     fn exit(&self) {
-//         nwg::stop_thread_dispatch();
-//     }
-//
-//     fn run() {
-//         nwg::init().expect("Failed to initialize NWG");
-//         let app = MyApp::build_ui(Default::default()).expect("Failed to build UI");
-//
-//         // 创建并添加 Scintilla 控件到布局
-//         let parent = &app.window;
-//         let scintilla = ScintillaControl::create(parent);
-//         let hwnd = scintilla.hwnd.hwnd().unwrap();
-//         nwg::Flexbox::attach(
-//             ScintillaControl::create(parent).hwnd,
-//             &app.layout,
-//             nwg::stretch::geometry::Rect {
-//                 start: 10.into(),
-//                 end: 10.into(),
-//                 top: 10.into(),
-//                 bottom: 10.into(),
-//             },
-//         );
-//
-//         nwg::dispatch_thread_events();
-//     }
-// }
-//
-// fn main() {
-//     MyApp::run();
 // }
