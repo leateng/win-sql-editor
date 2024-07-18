@@ -11,7 +11,7 @@ use tokio;
 
 #[derive(Default, NwgUi)]
 pub struct BasicApp {
-    #[nwg_control(size: (800, 600), position: (300, 300), title: "Basic example", flags: "WINDOW|VISIBLE")]
+    #[nwg_control(size: (800, 600), position: (300, 300), title: "SQL Editor", flags: "WINDOW|VISIBLE")]
     #[nwg_events( OnWindowClose: [BasicApp::say_goodbye] )]
     window: nwg::Window,
 
@@ -47,6 +47,6 @@ async fn main() {
     nwg::Font::set_global_family("Segoe UI Emoji").expect("set global font family error!");
     register_window_class();
 
-    let app = BasicApp::build_ui(Default::default()).expect("Failed to build UI");
+    let _app = BasicApp::build_ui(Default::default()).expect("Failed to build UI");
     nwg::dispatch_thread_events();
 }

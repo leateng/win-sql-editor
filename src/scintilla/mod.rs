@@ -6,7 +6,7 @@ use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
 use std::ptr::null_mut;
 use winapi;
-use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_HSCROLL, WS_VISIBLE, WS_VSCROLL};
+use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
 const SCI_SETCARETLINEVISIBLE: u32 = 0x200A;
 const SCI_STYLESETFONT: u32 = 0x2FF8;
