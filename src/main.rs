@@ -1,71 +1,52 @@
-#![windows_subsystem = "windows"]
-
-use sqlx::postgres::PgPoolOptions;
-use tokio;
-use w::co::WS;
-use winsafe::{self as w, gui, prelude::*, HINSTANCE};
-
+// #![windows_subsystem = "windows"]
 mod scintilla;
 
-#[derive(Clone)]
-struct MyWindow {
-    wnd: gui::WindowMain,
-    btn_hello: gui::Button,
-    edit: scintilla::ScintillaEdit,
+extern crate native_windows_derive as nwd;
+extern crate native_windows_gui as nwg;
+
+use crate::scintilla::ScintillaEdit;
+use nwd::NwgUi;
+use nwg::NativeUi;
+use tokio;
+
+#[derive(Default, NwgUi)]
+pub struct BasicApp {
+    #[nwg_control(size: (300, 115), position: (300, 300), title: "Basic example", flags: "WINDOW|VISIBLE")]
+    #[nwg_events( OnWindowClose: [BasicApp::say_goodbye] )]
+    window: nwg::Window,
+
+    #[nwg_control(text: "Heisenberg", size: (280, 25), position: (10, 10))]
+    name_edit: nwg::TextInput,
+
+    // #[nwg_control(text: "Say my name", size: (280, 60), position: (10, 40))]
+    // #[nwg_events( OnButtonClick: [BasicApp::say_hello] )]
+    // hello_button: nwg::Button,
+
+    // #[nwg_control(parent: window)]
+    // layout: nwg::FlexboxLayout,
+
+    // #[nwg_control(parent: layout)]
+    #[nwg_control(size: (280, 60), position: (10, 40))]
+    scintilla: ScintillaEdit,
 }
 
-impl MyWindow {
-    fn new() -> Self {
-        let wnd = gui::WindowMain::new(gui::WindowMainOpts {
-            title: "Win SQL".into(),
-            size: (800, 650),
-            style: gui::WindowMainOpts::default().style
-                | WS::MINIMIZEBOX
-                | WS::MAXIMIZEBOX
-                | WS::SIZEBOX, // add a minimize button
-            ..Default::default()
-        });
-
-        let btn_hello = gui::Button::new(
-            &wnd,
-            gui::ButtonOpts {
-                text: "&Click me".into(),
-                position: (20, 20),
-                ..Default::default()
-            },
-        );
-
-        let edit = scintilla::ScintillaEdit::new(&wnd, (20, 50), (500, 500));
-
-        let new_self = Self {
-            wnd,
-            btn_hello,
-            edit,
-        };
-        new_self.events();
-        new_self
+impl BasicApp {
+    fn say_hello(&self) {
+        nwg::simple_message("Hello😀", &format!("Hello😀 {}", self.name_edit.text()));
     }
 
-    fn events(&self) {
-        let self2 = self.clone();
-        self2.btn_hello.on().bn_clicked(move || {
-            println!("button click");
-
-            let h_instance = HINSTANCE::GetModuleHandle(None).unwrap();
-            println!("register_classes hInstance ={:?}", h_instance);
-
-            Ok(())
-        });
-
-        let self2 = self.clone();
+    fn say_goodbye(&self) {
+        nwg::simple_message("Goodbye", &format!("Goodbye {}", self.name_edit.text()));
+        nwg::stop_thread_dispatch();
     }
 }
 
 #[tokio::main]
 async fn main() {
-    let my_window = MyWindow::new();
-    scintilla::register_classes();
-    if let Err(e) = my_window.wnd.run_main(None) {
-        eprintln!("{}", e);
-    }
+    nwg::init().expect("Failed to init Native Windows GUI");
+    nwg::Font::set_global_family("Segoe UI Emoji").expect("set global font family error!");
+    ScintillaEdit::regist();
+
+    let app = BasicApp::build_ui(Default::default()).expect("Failed to build UI");
+    nwg::dispatch_thread_events();
 }

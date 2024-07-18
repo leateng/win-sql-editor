@@ -1,515 +1,218 @@
-use core::panic;
-use std::{
-    ffi::{c_void, CStr},
-    ptr::null,
+extern crate native_windows_gui as nwg;
+// use nwg::stretch::style::*;
+// use nwg::NativeUi;
+use nwg::{ControlBase, ControlHandle, NwgError};
+use std::ffi::OsStr;
+use std::os::windows::ffi::OsStrExt;
+use std::ptr::null_mut;
+use winapi;
+use winapi::um::winuser::{
+    BS_BITMAP, BS_ICON, BS_NOTIFY, WS_CHILD, WS_DISABLED, WS_TABSTOP, WS_VISIBLE,
 };
 
-use w::{msg::wm::Size, WString, HWND, POINT, SIZE};
-// use std::cell::RefCell;
-// use std::rc::Rc;
-use winsafe::{self as w, co, gui, prelude::*, HINSTANCE};
+const SCI_SETCARETLINEVISIBLE: u32 = 0x200A;
+const SCI_STYLESETFONT: u32 = 0x2FF8;
+const SCI_STYLESETSIZE: u32 = 0x2FFB;
+const SCI_SETTEXT: u32 = 0x000C;
+const STYLE_DEFAULT: usize = 32;
 
-extern "C" {
-    pub fn Scintilla_RegisterClasses(
-        hInstance: *mut ::std::os::raw::c_void,
-    ) -> ::std::os::raw::c_int;
-    // pub fn Scintilla_ReleaseResources() -> ::std::os::raw::c_int;
+pub struct WString {
+    inner: Vec<u16>,
 }
 
-pub fn register_classes() -> bool {
-    let h_instance = HINSTANCE::GetModuleHandle(None).unwrap();
-    if h_instance == HINSTANCE::NULL {
-        panic!("hInstance is null!");
+impl WString {
+    pub fn from_str(s: &str) -> WString {
+        let wide: Vec<u16> = OsStr::new(s).encode_wide().chain(Some(0)).collect();
+        WString { inner: wide }
     }
 
-    unsafe {
-        // // let ptr = CStr::from_ptr(h_instance.ptr() as *const _);
-        // println!("register_classes hInstance ={:?}", h_instance);
-        // println!(
-        //     "register_classes hInstance.raw_copy() ={:?}",
-        //     h_instance.raw_copy()
-        // );
-        // println!(
-        //     "register_classes hInstance.raw_copy().ptr() ={:?}",
-        //     h_instance.raw_copy().ptr()
-        // );
-
-        let status = Scintilla_RegisterClasses(h_instance.ptr());
-        return status != 0;
+    pub fn as_ptr(&self) -> *const u16 {
+        self.inner.as_ptr()
     }
 }
 
-#[derive(Clone)]
+pub struct ScintillaEditBuilder<'a> {
+    text: &'a str,
+    size: (i32, i32),
+    position: (i32, i32),
+    parent: Option<ControlHandle>,
+}
+
+impl<'a> ScintillaEditBuilder<'a> {
+    pub fn size(mut self, size: (i32, i32)) -> ScintillaEditBuilder<'a> {
+        self.size = size;
+        self
+    }
+
+    pub fn position(mut self, pos: (i32, i32)) -> ScintillaEditBuilder<'a> {
+        self.position = pos;
+        self
+    }
+
+    pub fn parent<C: Into<ControlHandle>>(mut self, p: C) -> ScintillaEditBuilder<'a> {
+        self.parent = Some(p.into());
+        self
+    }
+
+    pub fn build(self, out: &mut ScintillaEdit) -> Result<(), NwgError> {
+        // let flags = self.flags.map(|f| f.bits()).unwrap_or(out.flags());
+        let flags = out.flags();
+
+        let parent = match self.parent {
+            Some(p) => Ok(p),
+            None => Err(NwgError::no_parent("Scintilla")),
+        }?;
+
+        // Drop the old object
+        *out = ScintillaEdit::default();
+
+        out.handle = ControlBase::build_hwnd()
+            .class_name(out.class_name())
+            .forced_flags(out.forced_flags())
+            .flags(flags)
+            // .ex_flags(self.ex_flags)
+            .size(self.size)
+            .position(self.position)
+            .text(self.text)
+            .parent(Some(parent))
+            .build()?;
+
+        Ok(())
+    }
+}
+
+#[derive(Default, Eq, PartialEq)]
 pub struct ScintillaEdit {
-    hwnd: HWND,
+    pub handle: ControlHandle,
 }
 
 impl ScintillaEdit {
-    pub fn new(parent: &impl GuiParent, position: (i32, i32), size: (u32, u32)) -> Self {
+    pub fn regist() {
         unsafe {
-            let size2 = SIZE::new(size.0 as i32, size.1 as i32);
-            let h_instance = HINSTANCE::GetModuleHandle(None).unwrap();
-            let hwnd = w::HWND::CreateWindowEx(
-                co::WS_EX::CLIENTEDGE,
-                w::AtomStr::Str(WString::from_str("Scintilla")),
-                None,
-                co::WS::CHILD | co::WS::VISIBLE | co::WS::VSCROLL | co::WS::HSCROLL,
-                POINT::new(0, 0),
-                size2,
-                Some(parent.hwnd()),
-                w::IdMenu::None,
-                &h_instance,
-                None,
-            )
-            .unwrap();
-
-            let new_self = Self { hwnd };
+            let instance = winapi::um::libloaderapi::GetModuleHandleW(null_mut());
         }
-
-        // let wnd = gui::WindowControl::new(
-        //     parent,
-        //     gui::WindowControlOpts {
-        //         position,
-        //         size,
-        //         // class_name: "Scintilla".into(),
-        //         style: co::WS::CHILD | co::WS::VISIBLE,
-        //         ex_style: gui::WindowControlOpts::default().ex_style | co::WS_EX::CLIENTEDGE,
-        //         ..Default::default()
-        //     },
-        // );
-        //
-        // let wnd2 = wnd.clone();
-        // let size2 = SIZE::new(size.0 as i32, size.1 as i32);
-        //
-        //
-        // wnd.on().wm_create(move |p| unsafe {
-        //     let h_instance = HINSTANCE::GetModuleHandle(None).unwrap();
-        //     let hwnd = w::HWND::CreateWindowEx(
-        //         co::WS_EX::CLIENTEDGE,
-        //         w::AtomStr::Str(WString::from_str("Scintilla")),
-        //         None,
-        //         co::WS::CHILD | co::WS::VISIBLE | co::WS::VSCROLL | co::WS::HSCROLL,
-        //         POINT::new(0, 0),
-        //         size2,
-        //         Some(wnd2.hwnd()),
-        //         w::IdMenu::None,
-        //         &h_instance,
-        //         None,
-        //     )
-        //     .unwrap();
-        //
-        // // Set the font to "Segoe UI Emoji"
-        // let font = WString::from_str("Segoe UI Emoji");
-        // hwnd.SendMessage(
-        //     hwnd,
-        //     SCI_STYLESETFONT,
-        //     STYLE_DEFAULT,
-        //     font.as_ptr() as isize,
-        // );
-        //
-        // // Set the font size if necessary
-        // w::SendMessage(hwnd, SCI_STYLESETSIZE, STYLE_DEFAULT, 16);
-        //
-        // // Example: set some text with emoji
-        // let text = WString::from_str("Hello, world! 😊🌍");
-        // w::SendMessage(hwnd, co::SCI::SETTEXT.0, 0, text.as_ptr() as isize);
-
-        //     Ok(0)
-        // });
-        //
-        // let new_self = Self { wnd };
-
-        new_self
+    }
+    pub fn builder<'a>() -> ScintillaEditBuilder<'a> {
+        ScintillaEditBuilder {
+            text: "",
+            size: (100, 25),
+            position: (0, 0),
+            parent: None,
+        }
     }
 
-    // fn events(&self) {
-    //     let self2 = self.clone();
-    //     self.wnd.on().wm_create(move || {
-    //         CreateWindowEx
-    //         Ok(())
-    //     });
+    /// Winapi class name used during control creation
+    pub fn class_name(&self) -> &'static str {
+        "Scintilla"
+    }
+
+    /// Winapi base flags used during window creation
+    pub fn flags(&self) -> u32 {
+        WS_VISIBLE | WS_TABSTOP | BS_NOTIFY
+    }
+
+    /// Winapi flags required by the control
+    pub fn forced_flags(&self) -> u32 {
+        WS_CHILD
+    }
+
+    // pub fn create(parent: &nwg::Window) -> Self {
+    //     let instance = unsafe { winapi::um::libloaderapi::GetModuleHandleW(null_mut()) };
+    //     let class_name = WString::from_str("Scintilla");
+    //
+    //     let hwnd = unsafe {
+    //         winapi::um::winuser::CreateWindowExW(
+    //             0,
+    //             class_name.as_ptr(),
+    //             null_mut(),
+    //             winapi::um::winuser::WS_CHILD | winapi::um::winuser::WS_VISIBLE,
+    //             0,
+    //             0,
+    //             800,
+    //             600,
+    //             parent.handle.hwnd().unwrap(),
+    //             null_mut(),
+    //             instance,
+    //             null_mut(),
+    //         )
+    //     };
+    //
+    //     assert!(!hwnd.is_null(), "Failed to create Scintilla control");
+    //
+    //     let hwnd = nwg::ControlHandle::Hwnd(hwnd);
+    //
+    //     // 设置字体为 "Segoe UI Emoji"
+    //     let font = WString::from_str("Segoe UI Emoji");
+    //     unsafe {
+    //         winapi::um::winuser::SendMessageW(
+    //             hwnd.hwnd().unwrap(),
+    //             SCI_STYLESETFONT,
+    //             STYLE_DEFAULT as usize,
+    //             font.as_ptr() as isize,
+    //         );
+    //         winapi::um::winuser::SendMessageW(
+    //             hwnd.hwnd().unwrap(),
+    //             SCI_STYLESETSIZE,
+    //             STYLE_DEFAULT as usize,
+    //             16,
+    //         );
+    //     }
+    //
+    //     // Example: set some text with emoji
+    //     let text = WString::from_str("Hello, world! 😊🌍");
+    //     unsafe {
+    //         winapi::um::winuser::SendMessageW(
+    //             hwnd.hwnd().unwrap(),
+    //             SCI_SETTEXT,
+    //             0,
+    //             text.as_ptr() as isize,
+    //         );
+    //     }
+    //
+    //     ScintillaEdit { handle: hwnd }
     // }
 }
 
-// use std::any::Any;
-// use std::marker::PhantomPinned;
-// use std::pin::Pin;
-// use std::sync::Arc;
+// #[derive(Default, NativeUi)]
+// pub struct MyApp {
+//     #[nwg_control(size: (800, 600), position: (300, 300), title: "Scintilla Example")]
+//     #[nwg_events(OnWindowClose: [MyApp::exit])]
+//     window: nwg::Window,
 //
-// // use winsafe::decl::*;
-// // use winsafe::gui::{events::*, iterators::*, privs::*, *};
-// // use winsafe::msg::*;
+//     #[nwg_control(parent: window, text: None)]
+//     layout: nwg::Flexbox,
 //
-// use winsafe::prelude::*;
-//
-// struct Obj {
-//     // actual fields of Edit
-//     base: BaseNativeControl,
-//     events: EditEvents,
-//     _pin: PhantomPinned,
+//     scintilla: ScintillaControl,
 // }
-//
-// //------------------------------------------------------------------------------
-//
-// /// Native
-// /// [edit](https://learn.microsoft.com/en-us/windows/win32/controls/about-edit-controls)
-// /// control.
-// #[derive(Clone)]
-// pub struct Edit(Pin<Arc<Obj>>);
-//
-// unsafe impl Send for Edit {}
-//
-// impl AsRef<BaseNativeControl> for Edit {
-//     fn as_ref(&self) -> &BaseNativeControl {
-//         &self.0.base
-//     }
-// }
-//
-// impl GuiWindow for Edit {
-//     fn hwnd(&self) -> &HWND {
-//         self.0.base.hwnd()
+
+// impl MyApp {
+//     fn exit(&self) {
+//         nwg::stop_thread_dispatch();
 //     }
 //
-//     fn as_any(&self) -> &dyn Any {
-//         self
+//     fn run() {
+//         nwg::init().expect("Failed to initialize NWG");
+//         let app = MyApp::build_ui(Default::default()).expect("Failed to build UI");
+//
+//         // 创建并添加 Scintilla 控件到布局
+//         let parent = &app.window;
+//         let scintilla = ScintillaControl::create(parent);
+//         let hwnd = scintilla.hwnd.hwnd().unwrap();
+//         nwg::Flexbox::attach(
+//             ScintillaControl::create(parent).hwnd,
+//             &app.layout,
+//             nwg::stretch::geometry::Rect {
+//                 start: 10.into(),
+//                 end: 10.into(),
+//                 top: 10.into(),
+//                 bottom: 10.into(),
+//             },
+//         );
+//
+//         nwg::dispatch_thread_events();
 //     }
 // }
 //
-// impl GuiWindowText for Edit {}
-//
-// impl GuiChild for Edit {
-//     fn ctrl_id(&self) -> u16 {
-//         self.0.base.ctrl_id()
-//     }
-// }
-//
-// impl GuiChildFocus for Edit {}
-//
-// impl GuiNativeControl for Edit {}
-//
-// impl GuiNativeControlEvents<EditEvents> for Edit {
-//     fn on(&self) -> &EditEvents {
-//         if *self.hwnd() != HWND::NULL {
-//             panic!("Cannot add events after the control creation.");
-//         } else if *self.0.base.parent().hwnd() != HWND::NULL {
-//             panic!("Cannot add events after the parent window creation.");
-//         }
-//         &self.0.events
-//     }
-// }
-//
-// impl Edit {
-//     /// Instantiates a new `Edit` object, to be created on the parent window
-//     /// with
-//     /// [`HWND::CreateWindowEx`](crate::prelude::user_Hwnd::CreateWindowEx).
-//     ///
-//     /// # Panics
-//     ///
-//     /// Panics if the parent window was already created – that is, you cannot
-//     /// dynamically create an `Edit` in an event closure.
-//     ///
-//     /// # Examples
-//     ///
-//     /// ```no_run
-//     /// use winsafe::{self as w, prelude::*, gui};
-//     ///
-//     /// let wnd: gui::WindowMain; // initialized somewhere
-//     /// # let wnd = gui::WindowMain::new(gui::WindowMainOpts::default());
-//     ///
-//     /// let txt = gui::Edit::new(
-//     ///     &wnd,
-//     ///     gui::EditOpts {
-//     ///         position: (10, 10),
-//     ///         width: 120,
-//     ///         ..Default::default()
-//     ///     },
-//     /// );
-//     /// ```
-//     #[must_use]
-//     pub fn new(parent: &impl GuiParent, opts: EditOpts) -> Self {
-//         let opts = auto_ctrl_id_if_zero(opts);
-//         let ctrl_id = opts.ctrl_id;
-//
-//         let new_self = Self(Arc::pin(Obj {
-//             base: BaseNativeControl::new(parent, ctrl_id),
-//             events: EditEvents::new(parent, ctrl_id),
-//             _pin: PhantomPinned,
-//         }));
-//
-//         let self2 = new_self.clone();
-//         parent
-//             .as_ref()
-//             .before_user_on()
-//             .wm_create_or_initdialog(move |_, _| {
-//                 self2.create(OptsResz::Wnd(&opts))?;
-//                 Ok(WmRet::NotHandled)
-//             });
-//
-//         new_self
-//     }
-//
-//     /// Instantiates a new `Edit` object, to be loaded from a dialog resource
-//     /// with [`HWND::GetDlgItem`](crate::prelude::user_Hwnd::GetDlgItem).
-//     ///
-//     /// # Panics
-//     ///
-//     /// Panics if the parent dialog was already created – that is, you cannot
-//     /// dynamically create an `Edit` in an event closure.
-//     #[must_use]
-//     pub fn new_dlg(parent: &impl GuiParent, ctrl_id: u16, resize_behavior: (Horz, Vert)) -> Self {
-//         let new_self = Self(Arc::pin(Obj {
-//             base: BaseNativeControl::new(parent, ctrl_id),
-//             events: EditEvents::new(parent, ctrl_id),
-//             _pin: PhantomPinned,
-//         }));
-//
-//         let self2 = new_self.clone();
-//         parent
-//             .as_ref()
-//             .before_user_on()
-//             .wm(co::WM::INITDIALOG, move |_, _| {
-//                 self2.create(OptsResz::Dlg(resize_behavior))?;
-//                 Ok(WmRet::NotHandled)
-//             });
-//
-//         new_self
-//     }
-//
-//     fn create(&self, opts_resz: OptsResz<&EditOpts>) -> SysResult<()> {
-//         match opts_resz {
-//             OptsResz::Wnd(opts) => {
-//                 let mut pos = POINT::new(opts.position.0, opts.position.1);
-//                 let mut sz = SIZE::new(opts.width as _, opts.height as _);
-//                 multiply_dpi_or_dtu(self.0.base.parent(), Some(&mut pos), Some(&mut sz))?;
-//
-//                 self.0.base.create_window(
-//                     "Scintilla",
-//                     Some(&opts.text),
-//                     pos,
-//                     sz,
-//                     opts.window_ex_style,
-//                     opts.window_style | opts.edit_style.into(),
-//                 )?;
-//
-//                 unsafe {
-//                     self.hwnd().SendMessage(wm::SetFont {
-//                         hfont: ui_font(),
-//                         redraw: true,
-//                     });
-//                 }
-//             }
-//             OptsResz::Dlg(_) => self.0.base.create_dlg()?,
-//         }
-//
-//         self.0
-//             .base
-//             .parent()
-//             .add_to_layout_arranger(self.hwnd(), opts_resz.resize_behavior())
-//     }
-//
-//     /// Hides any balloon tip by sending an
-//     /// [`em::HideBalloonTip`](crate::msg::em::HideBalloonTip) message.
-//     pub fn hide_balloon_tip(&self) {
-//         unsafe { self.hwnd().SendMessage(em::HideBalloonTip {}) }.unwrap();
-//     }
-//
-//     /// Returns an iterator over the lines in the Edit.
-//     ///
-//     /// # Examples
-//     ///
-//     /// ```no_run
-//     /// use winsafe::{self as w, prelude::*, gui};
-//     ///
-//     /// let my_edit: gui::Edit; // initialized somewhere
-//     /// # let wnd = gui::WindowMain::new(gui::WindowMainOpts::default());
-//     /// # let my_edit = gui::Edit::new(&wnd, gui::EditOpts::default());
-//     ///
-//     /// for line in my_edit.iter_lines() {
-//     ///     println!("{}", line);
-//     /// }
-//     /// # w::SysResult::Ok(())
-//     /// ```
-//     #[must_use]
-//     pub fn iter_lines<'a>(&'a self) -> impl Iterator<Item = String> + 'a {
-//         EditLineIter::new(self)
-//     }
-//
-//     /// Limits the number of characters that can be type by sending an
-//     /// [`em::SetLimitText`](crate::msg::em::SetLimitText) message.
-//     pub fn limit_text(&self, max_chars: Option<u32>) {
-//         unsafe {
-//             self.hwnd().SendMessage(em::SetLimitText { max_chars });
-//         }
-//     }
-//
-//     /// Returns the number of lines by sending an
-//     /// [`em::GetLineCount`](crate::msg::em::GetLineCount) message.
-//     #[must_use]
-//     pub fn line_count(&self) -> u32 {
-//         unsafe { self.hwnd().SendMessage(em::GetLineCount {}) }
-//     }
-//
-//     /// Sets the font to the `Edit` by sending an
-//     /// [`wm::SetFont`](crate::msg::wm::SetFont) message.
-//     ///
-//     /// Note that the font must remain alive while being used in the control.
-//     pub fn set_font(&self, font: &HFONT) {
-//         unsafe {
-//             self.hwnd().SendMessage(wm::SetFont {
-//                 hfont: font.raw_copy(),
-//                 redraw: true,
-//             });
-//         }
-//     }
-//
-//     /// Sets the selection range of the text by sending an
-//     /// [`em::SetSel`](crate::msg::em::SetSel) message.
-//     ///
-//     /// # Examples
-//     ///
-//     /// Selecting all text in the control:
-//     ///
-//     /// ```no_run
-//     /// use winsafe::{self as w, prelude::*, gui};
-//     ///
-//     /// let my_edit: gui::Edit; // initialized somewhere
-//     /// # let wnd = gui::WindowMain::new(gui::WindowMainOpts::default());
-//     /// # let my_edit = gui::Edit::new(&wnd, gui::EditOpts::default());
-//     ///
-//     /// my_edit.set_selection(0, -1);
-//     /// ```
-//     ///
-//     /// Clearing the selection:
-//     ///
-//     /// ```no_run
-//     /// use winsafe::gui;
-//     ///
-//     /// let my_edit: gui::Edit; // initialized somewhere
-//     /// # let wnd = gui::WindowMain::new(gui::WindowMainOpts::default());
-//     /// # let my_edit = gui::Edit::new(&wnd, gui::EditOpts::default());
-//     ///
-//     /// my_edit.set_selection(-1, -1);
-//     /// ```
-//     pub fn set_selection(&self, start: i32, end: i32) {
-//         unsafe {
-//             self.hwnd().SendMessage(em::SetSel { start, end });
-//         }
-//     }
-//
-//     /// Displays a balloon tip by sending an
-//     /// [`em::ShowBalloonTip`](crate::msg::em::ShowBalloonTip) message.
-//     pub fn show_ballon_tip(&self, title: &str, text: &str, icon: co::TTI) {
-//         let mut title16 = WString::from_str(title);
-//         let mut text16 = WString::from_str(text);
-//
-//         let mut info = EDITBALLOONTIP::default();
-//         info.set_pszTitle(Some(&mut title16));
-//         info.set_pszText(Some(&mut text16));
-//         info.ttiIcon = icon;
-//
-//         unsafe { self.hwnd().SendMessage(em::ShowBalloonTip { info: &info }) }.unwrap();
-//     }
-// }
-//
-// //------------------------------------------------------------------------------
-//
-// /// Options to create an [`Edit`](crate::gui::Edit) programmatically with
-// /// [`Edit::new`](crate::gui::Edit::new).
-// pub struct EditOpts {
-//     /// Text of the control to be
-//     /// [created](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw).
-//     ///
-//     /// Defaults to empty string.
-//     pub text: String,
-//     /// Left and top position coordinates of control within parent's client
-//     /// area, to be
-//     /// [created](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw).
-//     ///
-//     /// If the parent window is a dialog, the values are in Dialog Template
-//     /// Units; otherwise in pixels, which will be multiplied to match current
-//     /// system DPI.
-//     ///
-//     /// Defaults to `(0, 0)`.
-//     pub position: (i32, i32),
-//     /// Control width to be
-//     /// [created](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw).
-//     ///
-//     /// If the parent window is a dialog, the value is in Dialog Template Units;
-//     /// otherwise in pixels, which will be multiplied to match current system
-//     /// DPI.
-//     ///
-//     /// Defaults to `100`.
-//     pub width: u32,
-//     /// Control height to be
-//     /// [created](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw).
-//     ///
-//     /// If the parent window is a dialog, the value is in Dialog Template Units;
-//     /// otherwise in pixels, which will be multiplied to match current system
-//     /// DPI.
-//     ///
-//     /// Defaults to `23`.
-//     ///
-//     /// **Note:** You should change the default height only in a multi-line
-//     /// edit, otherwise it will look off.
-//     pub height: u32,
-//     /// Edit styles to be
-//     /// [created](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw).
-//     ///
-//     /// Defaults to `ES::AUTOHSCROLL | ES::NOHIDESEL`.
-//     ///
-//     /// Suggestions:
-//     /// * add `ES::PASSWORD` for a password input;
-//     /// * add `ES::NUMBER` to accept only numbers;
-//     /// * replace with `ES::MULTILINE | ES::WANTRETURN | ES::AUTOVSCROLL | ES::NOHIDESEL` for a multi-line edit.
-//     pub edit_style: co::ES,
-//     /// Window styles to be
-//     /// [created](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw).
-//     ///
-//     /// Defaults to `WS::CHILD | WS::VISIBLE | WS::TABSTOP | WS::GROUP`.
-//     pub window_style: co::WS,
-//     /// Extended window styles to be
-//     /// [created](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-createwindowexw).
-//     ///
-//     /// Defaults to `WS_EX::LEFT | WS_EX::CLIENTEDGE`.
-//     pub window_ex_style: co::WS_EX,
-//
-//     /// The control ID.
-//     ///
-//     /// Defaults to an auto-generated ID.
-//     pub ctrl_id: u16,
-//     /// Horizontal and vertical behavior of the control when the parent window
-//     /// is resized.
-//     ///
-//     /// **Note:** You should use `Vert::Resize` only in a multi-line edit.
-//     ///
-//     /// Defaults to `(gui::Horz::None, gui::Vert::None)`.
-//     pub resize_behavior: (Horz, Vert),
-// }
-//
-// impl Default for EditOpts {
-//     fn default() -> Self {
-//         Self {
-//             text: "".to_owned(),
-//             position: (0, 0),
-//             width: 100,
-//             height: 23,
-//             edit_style: co::ES::AUTOHSCROLL | co::ES::NOHIDESEL,
-//             window_style: co::WS::CHILD | co::WS::VISIBLE | co::WS::TABSTOP | co::WS::GROUP,
-//             window_ex_style: co::WS_EX::LEFT | co::WS_EX::CLIENTEDGE,
-//             ctrl_id: 0,
-//             resize_behavior: (Horz::None, Vert::None),
-//         }
-//     }
-// }
-//
-// impl ResizeBehavior for &EditOpts {
-//     fn resize_behavior(&self) -> (Horz, Vert) {
-//         self.resize_behavior
-//     }
-// }
-//
-// impl AutoCtrlId for EditOpts {
-//     fn ctrl_id_mut(&mut self) -> &mut u16 {
-//         &mut self.ctrl_id
-//     }
+// fn main() {
+//     MyApp::run();
 // }

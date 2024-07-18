@@ -6,7 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-winsafe = { version = "0.0.21", features = ["gui", "user"] }
+# winsafe = { version = "0.0.21", features = ["gui", "user"] }
+native-windows-gui = "*"
+native-windows-derive = "*"
+winapi = "*"
 tokio = { version = "1.38.0", features = ["rt-multi-thread", "macros"] }
 sqlx = { version = "0.7", features = [
   "runtime-tokio",
@@ -20,6 +23,7 @@ sqlx = { version = "0.7", features = [
 
 [build-dependencies]
 cc = { version = "1.0", features = ["parallel"] }
+embed-resource = "1.8"
 
 [profile.release]
 strip = true

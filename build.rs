@@ -1,4 +1,8 @@
+extern crate embed_resource;
+
 fn main() {
+    embed_resource::compile("app.rc");
+
     cc::Build::new()
         .cpp(true)
         .define("USE_D2D", "1")
