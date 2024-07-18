@@ -8,11 +8,13 @@ use crate::scintilla::{register_window_class, ScintillaEdit};
 use nwd::NwgUi;
 use nwg::NativeUi;
 use tokio;
+// use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_VISIBLE};
+// use nwg::Event
 
 #[derive(Default, NwgUi)]
 pub struct BasicApp {
-    #[nwg_control(size: (800, 600), position: (300, 300), title: "SQL Editor", flags: "WINDOW|VISIBLE")]
-    #[nwg_events( OnWindowClose: [BasicApp::say_goodbye] )]
+    #[nwg_control(size: (800, 600), position: (300, 300), title: "SQL Editor", flags: "MAIN_WINDOW|VISIBLE")]
+    #[nwg_events( OnWindowClose: [BasicApp::say_goodbye] , OnResize: [BasicApp::on_resize])]
     window: nwg::Window,
 
     // #[nwg_control(text: "Heisenberg", size: (280, 25), position: (10, 10))]
@@ -39,6 +41,8 @@ impl BasicApp {
         nwg::simple_message("Goodbye", &format!("Goodbye {}", "123"));
         nwg::stop_thread_dispatch();
     }
+
+    fn on_resize(&self) {}
 }
 
 #[tokio::main]
