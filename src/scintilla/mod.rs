@@ -17,12 +17,16 @@ const SCI_SETTEXT: u32 = 0x000C;
 const STYLE_DEFAULT: usize = 32;
 
 extern "C" {
-    pub fn register_window_class() -> bool {
-        unsafe {
-            let instance = winapi::um::libloaderapi::GetModuleHandleW(null_mut());
-            let status = Scintilla_RegisterClasses(h_instance.ptr());
-            return status != 0;
-        }
+    pub fn Scintilla_RegisterClasses(
+        hInstance: *mut ::std::os::raw::c_void,
+    ) -> ::std::os::raw::c_int;
+}
+
+pub fn register_window_class() -> bool {
+    unsafe {
+        let instance = winapi::um::libloaderapi::GetModuleHandleW(null_mut());
+        let status = Scintilla_RegisterClasses(instance as *mut std::ffi::c_void);
+        return status != 0;
     }
 }
 
