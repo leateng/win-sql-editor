@@ -23,7 +23,8 @@ sqlx = { version = "0.7", features = [
 
 [build-dependencies]
 cc = { version = "1.0", features = ["parallel"] }
-embed-resource = "1.8"
+embed-resource = "2.4.3"
+# bindgen = "*"
 
 [profile.release]
 strip = true

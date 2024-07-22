@@ -1,7 +1,8 @@
 extern crate embed_resource;
 
 fn main() {
-    embed_resource::compile("app.rc");
+    println!("cargo:rerun-if-changed=app.rc");
+    embed_resource::compile("app.rc", embed_resource::NONE);
 
     cc::Build::new()
         .cpp(true)

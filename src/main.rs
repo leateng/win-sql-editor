@@ -1,4 +1,5 @@
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod scintilla;
 
 extern crate native_windows_derive as nwd;
@@ -9,7 +10,6 @@ use nwd::NwgUi;
 use nwg::NativeUi;
 use tokio;
 // use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_VISIBLE};
-// use nwg::Event
 
 #[derive(Default, NwgUi)]
 pub struct BasicApp {
@@ -42,7 +42,10 @@ impl BasicApp {
         nwg::stop_thread_dispatch();
     }
 
-    fn on_resize(&self) {}
+    fn on_resize(&self) {
+        // self.scintilla.size(self.window.set_size(x, y)
+        println!("window size = {:?}", self.window.size());
+    }
 }
 
 #[tokio::main]
