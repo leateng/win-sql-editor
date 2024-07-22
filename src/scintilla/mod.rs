@@ -9,6 +9,7 @@ use nwg::{ControlBase, ControlHandle, NwgError};
 use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
 use std::ptr::null_mut;
+use std::{isize, mem};
 use winapi;
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
@@ -94,14 +95,43 @@ impl<'a> ScintillaEditBuilder<'a> {
             .parent(Some(parent))
             .build()?;
 
+        out.sci_direct_ptr = unsafe {
+            winapi::um::winuser::SendMessageW(
+                out.handle.hwnd().unwrap(),
+                SCI_GETDIRECTPOINTER,
+                0 as usize,
+                0 as isize,
+            )
+        };
+
+        unsafe {
+            if SCI_FN_DIRECT == None {
+                let result = winapi::um::winuser::SendMessageW(
+                    out.handle.hwnd().unwrap(),
+                    SCI_GETDIRECTFUNCTION,
+                    0 as usize,
+                    0 as isize,
+                );
+
+                SCI_FN_DIRECT = mem::transmute(result);
+            };
+        }
+
         // 设置字体为 "Segoe UI Emoji"
         let font = WString::from_str("FiraCode Nerd Font Mono");
         unsafe {
-            winapi::um::winuser::SendMessageW(
-                out.handle.hwnd().unwrap(),
+            // winapi::um::winuser::SendMessageW(
+            //     out.handle.hwnd().unwrap(),
+            //     SCI_SETTECHNOLOGY,
+            //     SC_TECHNOLOGY_DIRECTWRITERETAIN as usize,
+            //     0,
+            // );
+
+            SCI_FN_DIRECT.unwrap()(
+                out.sci_direct_ptr,
                 SCI_SETTECHNOLOGY,
                 SC_TECHNOLOGY_DIRECTWRITERETAIN as usize,
-                0,
+                0 as isize,
             );
 
             winapi::um::winuser::SendMessageW(
@@ -110,6 +140,7 @@ impl<'a> ScintillaEditBuilder<'a> {
                 STYLE_DEFAULT as usize,
                 font.as_ptr() as isize,
             );
+
             winapi::um::winuser::SendMessageW(
                 out.handle.hwnd().unwrap(),
                 SCI_STYLESETSIZE,
@@ -136,7 +167,10 @@ impl<'a> ScintillaEditBuilder<'a> {
 #[derive(Default, Eq, PartialEq)]
 pub struct ScintillaEdit {
     pub handle: ControlHandle,
+    sci_direct_ptr: sptr_t,
 }
+
+static mut SCI_FN_DIRECT: SciFnDirect = None;
 
 impl ScintillaEdit {
     pub fn builder<'a>() -> ScintillaEditBuilder<'a> {
