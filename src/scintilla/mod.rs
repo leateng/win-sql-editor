@@ -2,9 +2,6 @@ mod bindings;
 pub use bindings::*;
 
 extern crate native_windows_gui as nwg;
-// use nwg::stretch::style::*;
-// use nwg::NativeUi;
-// use nwg::win32::window_helper as wh;
 use nwg::{ControlBase, ControlHandle, NwgError};
 use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
@@ -12,12 +9,6 @@ use std::ptr::null_mut;
 use std::{isize, mem};
 use winapi;
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
-
-// const SCI_SETCARETLINEVISIBLE: u32 = 0x200A;
-// const SCI_STYLESETFONT: u32 = 0x2FF8;
-// const SCI_STYLESETSIZE: u32 = 0x2FFB;
-// const SCI_SETTEXT: u32 = 0x000C;
-// const STYLE_DEFAULT: usize = 32;
 
 extern "C" {
     pub fn Scintilla_RegisterClasses(
@@ -117,6 +108,12 @@ impl<'a> ScintillaEditBuilder<'a> {
             };
         }
 
+        out.sci_call(
+            SCI_SETTECHNOLOGY,
+            SC_TECHNOLOGY_DIRECTWRITERETAIN as usize,
+            0 as isize,
+        );
+
         // 设置字体为 "Segoe UI Emoji"
         let font = WString::from_str("FiraCode Nerd Font Mono");
         unsafe {
@@ -127,12 +124,12 @@ impl<'a> ScintillaEditBuilder<'a> {
             //     0,
             // );
 
-            SCI_FN_DIRECT.unwrap()(
-                out.sci_direct_ptr,
-                SCI_SETTECHNOLOGY,
-                SC_TECHNOLOGY_DIRECTWRITERETAIN as usize,
-                0 as isize,
-            );
+            // SCI_FN_DIRECT.unwrap()(
+            //     out.sci_direct_ptr,
+            //     SCI_SETTECHNOLOGY,
+            //     SC_TECHNOLOGY_DIRECTWRITERETAIN as usize,
+            //     0 as isize,
+            // );
 
             winapi::um::winuser::SendMessageW(
                 out.handle.hwnd().unwrap(),
@@ -201,5 +198,13 @@ impl ScintillaEdit {
     /// Winapi flags required by the control
     pub fn forced_flags(&self) -> u32 {
         WS_CHILD
+    }
+
+    pub fn sci_call(&self, iMessage: ::std::os::raw::c_uint, wParam: uptr_t, lParam: sptr_t) {
+        unsafe {
+            if let Some(fp_direct) = SCI_FN_DIRECT {
+                fp_direct(self.sci_direct_ptr, iMessage, wParam, lParam);
+            }
+        }
     }
 }
