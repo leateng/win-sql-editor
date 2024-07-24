@@ -8,7 +8,7 @@ extern crate native_windows_gui as nwg;
 use crate::scintilla::{register_window_class, ScintillaEdit};
 use nwd::NwgUi;
 use nwg::NativeUi;
-use tokio;
+// use tokio;
 // use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_VISIBLE};
 
 #[derive(Default, NwgUi)]
