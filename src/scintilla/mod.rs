@@ -108,11 +108,14 @@ impl<'a> ScintillaEditBuilder<'a> {
             };
         }
 
+        // use direct writer to support colorful emoji
         out.sci_call(
             SCI_SETTECHNOLOGY,
             SC_TECHNOLOGY_DIRECTWRITERETAIN as usize,
-            0 as isize,
+            0,
         );
+
+        out.sci_call(SCI_SETFONTQUALITY, SC_EFF_QUALITY_ANTIALIASED as usize, 0);
 
         // 设置字体为 "Segoe UI Emoji"
         let font = WString::from_str("FiraCode Nerd Font Mono");
