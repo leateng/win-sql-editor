@@ -116,6 +116,7 @@ impl<'a> ScintillaEditBuilder<'a> {
         );
 
         out.sci_call(SCI_SETFONTQUALITY, SC_EFF_QUALITY_ANTIALIASED as usize, 0);
+        out.sci_call(SCI_SETIMEINTERACTION, SC_IME_INLINE as usize, 0);
 
         // 设置字体为 "Segoe UI Emoji"
         let font = WString::from_str("FiraCode Nerd Font Mono");
