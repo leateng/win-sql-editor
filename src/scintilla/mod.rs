@@ -212,3 +212,26 @@ impl ScintillaEdit {
         }
     }
 }
+
+impl From<ControlHandle> for ScintillaEdit {
+    fn from(handle: ControlHandle) -> ScintillaEdit {
+        let ptr = unsafe {
+            winapi::um::winuser::SendMessageW(
+                handle.hwnd().unwrap(),
+                SCI_GETDIRECTPOINTER,
+                0 as usize,
+                0 as isize,
+            )
+        };
+        ScintillaEdit {
+            handle: handle,
+            sci_direct_ptr: ptr,
+        }
+    }
+}
+
+impl Into<ControlHandle> for &ScintillaEdit {
+    fn into(self) -> ControlHandle {
+        self.handle
+    }
+}
