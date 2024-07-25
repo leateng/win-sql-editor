@@ -18,6 +18,8 @@ use nwg::stretch::{
 
 const FIFTY_PC: D = D::Percent(0.5);
 const PT_10: D = D::Points(10.0);
+const PT_2: D = D::Points(2.0);
+const PT_5: D = D::Points(5.0);
 const PT_0: D = D::Points(0.0);
 const PADDING: Rect<D> = Rect {
     start: PT_10,
@@ -30,6 +32,20 @@ const MARGIN_0: Rect<D> = Rect {
     end: PT_0,
     top: PT_0,
     bottom: PT_0,
+};
+
+const MARGIN_2: Rect<D> = Rect {
+    start: PT_2,
+    end: PT_2,
+    top: PT_2,
+    bottom: PT_2,
+};
+
+const MARGIN_5: Rect<D> = Rect {
+    start: PT_5,
+    end: PT_5,
+    top: PT_5,
+    bottom: PT_5,
 };
 
 #[derive(Default, NwgUi)]

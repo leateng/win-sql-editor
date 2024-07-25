@@ -10,6 +10,28 @@ use std::{isize, mem};
 use winapi;
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
+// static DEFAULT_FONT: String = "Courier New".into();
+static mut SCI_FN_DIRECT: SciFnDirect = None;
+
+pub struct WString {
+    inner: Vec<u16>,
+}
+
+pub struct ScintillaEditBuilder<'a> {
+    text: &'a str,
+    size: (i32, i32),
+    position: (i32, i32),
+    ex_flags: u32,
+    parent: Option<ControlHandle>,
+}
+
+#[derive(Default, Eq, PartialEq)]
+pub struct ScintillaEdit {
+    pub handle: ControlHandle,
+    sci_direct_ptr: sptr_t,
+    font: String,
+}
+
 extern "C" {
     pub fn Scintilla_RegisterClasses(
         hInstance: *mut ::std::os::raw::c_void,
@@ -24,10 +46,6 @@ pub fn register_window_class() -> bool {
     }
 }
 
-pub struct WString {
-    inner: Vec<u16>,
-}
-
 impl WString {
     pub fn from_str(s: &str) -> WString {
         let wide: Vec<u16> = OsStr::new(s).encode_wide().chain(Some(0)).collect();
@@ -37,14 +55,6 @@ impl WString {
     pub fn as_ptr(&self) -> *const u16 {
         self.inner.as_ptr()
     }
-}
-
-pub struct ScintillaEditBuilder<'a> {
-    text: &'a str,
-    size: (i32, i32),
-    position: (i32, i32),
-    ex_flags: u32,
-    parent: Option<ControlHandle>,
 }
 
 impl<'a> ScintillaEditBuilder<'a> {
@@ -94,59 +104,23 @@ impl<'a> ScintillaEditBuilder<'a> {
                 0 as isize,
             )
         };
+        out.font = "Courier New".into();
 
-        unsafe {
-            if SCI_FN_DIRECT == None {
-                let result = winapi::um::winuser::SendMessageW(
-                    out.handle.hwnd().unwrap(),
-                    SCI_GETDIRECTFUNCTION,
-                    0 as usize,
-                    0 as isize,
-                );
-
-                SCI_FN_DIRECT = mem::transmute(result);
-            };
-        }
-
-        // use direct writer to support colorful emoji
-        out.sci_call(
-            SCI_SETTECHNOLOGY,
-            SC_TECHNOLOGY_DIRECTWRITERETAIN as usize,
-            0,
-        );
-
-        out.sci_call(SCI_SETFONTQUALITY, SC_EFF_QUALITY_ANTIALIASED as usize, 0);
+        out.set_technology(SC_TECHNOLOGY_DIRECTWRITERETAIN as usize);
+        out.set_font_quality(SC_EFF_QUALITY_ANTIALIASED as usize);
+        // out.sci_call(SCI_SETFONTQUALITY, SC_EFF_QUALITY_ANTIALIASED as usize, 0);
         out.sci_call(SCI_SETIMEINTERACTION, SC_IME_INLINE as usize, 0);
+        out.set_font_size(12);
 
         // 设置字体为 "Segoe UI Emoji"
-        let font = WString::from_str("FiraCode Nerd Font Mono");
+        // let font = Box::new(WString::from_str("FiraCode Nerd Font Mono"));
+        // let font = "FiraCode Nerd Font Mono";
         unsafe {
-            // winapi::um::winuser::SendMessageW(
-            //     out.handle.hwnd().unwrap(),
-            //     SCI_SETTECHNOLOGY,
-            //     SC_TECHNOLOGY_DIRECTWRITERETAIN as usize,
-            //     0,
-            // );
-
-            // SCI_FN_DIRECT.unwrap()(
-            //     out.sci_direct_ptr,
-            //     SCI_SETTECHNOLOGY,
-            //     SC_TECHNOLOGY_DIRECTWRITERETAIN as usize,
-            //     0 as isize,
-            // );
-
             winapi::um::winuser::SendMessageW(
                 out.handle.hwnd().unwrap(),
                 SCI_STYLESETFONT,
                 STYLE_DEFAULT as usize,
-                font.as_ptr() as isize,
-            );
-
-            winapi::um::winuser::SendMessageW(
-                out.handle.hwnd().unwrap(),
-                SCI_STYLESETSIZE,
-                STYLE_DEFAULT as usize,
-                14,
+                out.font.as_ptr() as isize,
             );
         }
 
@@ -164,14 +138,6 @@ impl<'a> ScintillaEditBuilder<'a> {
         Ok(())
     }
 }
-
-#[derive(Default, Eq, PartialEq)]
-pub struct ScintillaEdit {
-    pub handle: ControlHandle,
-    sci_direct_ptr: sptr_t,
-}
-
-static mut SCI_FN_DIRECT: SciFnDirect = None;
 
 impl ScintillaEdit {
     pub fn builder<'a>() -> ScintillaEditBuilder<'a> {
@@ -204,18 +170,45 @@ impl ScintillaEdit {
         WS_CHILD
     }
 
-    pub fn sci_call(&self, iMessage: ::std::os::raw::c_uint, wParam: uptr_t, lParam: sptr_t) {
+    pub fn sci_call(&self, i_message: ::std::os::raw::c_uint, w_param: uptr_t, l_param: sptr_t) {
         unsafe {
-            if let Some(fp_direct) = SCI_FN_DIRECT {
-                fp_direct(self.sci_direct_ptr, iMessage, wParam, lParam);
+            match SCI_FN_DIRECT {
+                None => {
+                    let fp = winapi::um::winuser::SendMessageW(
+                        self.handle.hwnd().unwrap(),
+                        SCI_GETDIRECTFUNCTION,
+                        0 as usize,
+                        0 as isize,
+                    );
+
+                    SCI_FN_DIRECT = mem::transmute(fp);
+                    if let Some(fp) = SCI_FN_DIRECT {
+                        fp(self.sci_direct_ptr, i_message, w_param, l_param);
+                    }
+                }
+                Some(fp) => {
+                    fp(self.sci_direct_ptr, i_message, w_param, l_param);
+                }
             }
         }
+    }
+
+    pub fn set_font_size(&self, font_size: isize) {
+        self.sci_call(SCI_STYLESETSIZE, STYLE_DEFAULT as usize, font_size);
+    }
+
+    pub fn set_technology(&self, technology: usize) {
+        self.sci_call(SCI_SETTECHNOLOGY, technology, 0);
+    }
+
+    pub fn set_font_quality(&self, font_quality: usize) {
+        self.sci_call(SCI_SETFONTQUALITY, font_quality, 0);
     }
 }
 
 impl From<ControlHandle> for ScintillaEdit {
     fn from(handle: ControlHandle) -> ScintillaEdit {
-        let ptr = unsafe {
+        let sci_direct_ptr = unsafe {
             winapi::um::winuser::SendMessageW(
                 handle.hwnd().unwrap(),
                 SCI_GETDIRECTPOINTER,
@@ -224,8 +217,9 @@ impl From<ControlHandle> for ScintillaEdit {
             )
         };
         ScintillaEdit {
-            handle: handle,
-            sci_direct_ptr: ptr,
+            handle,
+            sci_direct_ptr,
+            font: String::from("Consolas"),
         }
     }
 }
