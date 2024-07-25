@@ -6,10 +6,9 @@ fn main() {
 
     cc::Build::new()
         .cpp(true)
-        .define("USE_D2D", "1")
+        .flag("/std:c++17")
         .include("./deps/scintilla/include")
         .include("./deps/scintilla/src/")
-        .flag("/std:c++17")
         .file("./deps/scintilla/src/AutoComplete.cxx")
         .file("./deps/scintilla/src/CallTip.cxx")
         .file("./deps/scintilla/src/CaseConvert.cxx")
@@ -47,6 +46,44 @@ fn main() {
         .file("./deps/scintilla/win32/PlatWin.cxx")
         .file("./deps/scintilla/win32/ScintillaWin.cxx")
         .compile("scintilla");
+
+    // $(DIR_O)\Accessor.obj \
+    // $(DIR_O)\CharacterCategory.obj \
+    // $(DIR_O)\CharacterSet.obj \
+    // $(DIR_O)\DefaultLexer.obj \
+    // $(DIR_O)\InList.obj \
+    // $(DIR_O)\LexAccessor.obj \
+    // $(DIR_O)\LexerBase.obj \
+    // $(DIR_O)\LexerModule.obj \
+    // $(DIR_O)\LexerSimple.obj \
+    // $(DIR_O)\PropSetSimple.obj \
+    // $(DIR_O)\StyleContext.obj \
+    // $(DIR_O)\WordList.obj
+    cc::Build::new()
+        .cpp(true)
+        .flag("/std:c++17")
+        .include("./deps/scintilla/include/")
+        .include("./deps/lexilla/include/")
+        .include("./deps/lexilla/lexlib/")
+        .file("./deps/lexilla/lexers/LexSQL.cxx")
+        .file("./deps/lexilla/lexers/LexMSSQL.cxx")
+        .file("./deps/lexilla/lexers/LexJSON.cxx")
+        .file("./deps/lexilla/lexers/LexHTML.cxx")
+        .file("./deps/lexilla/lexers/LexYAML.cxx")
+        .file("./deps/lexilla/lexlib/Accessor.cxx")
+        .file("./deps/lexilla/lexlib/CharacterCategory.cxx")
+        .file("./deps/lexilla/lexlib/CharacterSet.cxx")
+        .file("./deps/lexilla/lexlib/DefaultLexer.cxx")
+        .file("./deps/lexilla/lexlib/InList.cxx")
+        .file("./deps/lexilla/lexlib/LexAccessor.cxx")
+        .file("./deps/lexilla/lexlib/LexerBase.cxx")
+        .file("./deps/lexilla/lexlib/LexerModule.cxx")
+        .file("./deps/lexilla/lexlib/LexerSimple.cxx")
+        .file("./deps/lexilla/lexlib/PropSetSimple.cxx")
+        .file("./deps/lexilla/lexlib/StyleContext.cxx")
+        .file("./deps/lexilla/lexlib/WordList.cxx")
+        .file("./deps/lexilla/src/Lexilla.cxx")
+        .compile("lexilla");
 
     println!("cargo:rustc-link-lib=dylib=gdi32");
     println!("cargo:rustc-link-lib=dylib=user32");
