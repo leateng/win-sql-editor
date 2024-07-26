@@ -1,4 +1,5 @@
 extern crate embed_resource;
+use std::fs;
 
 fn main() {
     println!("cargo:rerun-if-changed=app.rc");
@@ -47,29 +48,18 @@ fn main() {
         .file("./deps/scintilla/win32/ScintillaWin.cxx")
         .compile("scintilla");
 
-    // $(DIR_O)\Accessor.obj \
-    // $(DIR_O)\CharacterCategory.obj \
-    // $(DIR_O)\CharacterSet.obj \
-    // $(DIR_O)\DefaultLexer.obj \
-    // $(DIR_O)\InList.obj \
-    // $(DIR_O)\LexAccessor.obj \
-    // $(DIR_O)\LexerBase.obj \
-    // $(DIR_O)\LexerModule.obj \
-    // $(DIR_O)\LexerSimple.obj \
-    // $(DIR_O)\PropSetSimple.obj \
-    // $(DIR_O)\StyleContext.obj \
-    // $(DIR_O)\WordList.obj
-    cc::Build::new()
+    let mut lexilla_builder = cc::Build::new();
+    lexilla_builder
         .cpp(true)
         .flag("/std:c++17")
         .include("./deps/scintilla/include/")
         .include("./deps/lexilla/include/")
         .include("./deps/lexilla/lexlib/")
-        .file("./deps/lexilla/lexers/LexSQL.cxx")
-        .file("./deps/lexilla/lexers/LexMSSQL.cxx")
-        .file("./deps/lexilla/lexers/LexJSON.cxx")
-        .file("./deps/lexilla/lexers/LexHTML.cxx")
-        .file("./deps/lexilla/lexers/LexYAML.cxx")
+        // .file("./deps/lexilla/lexers/LexSQL.cxx")
+        // .file("./deps/lexilla/lexers/LexMSSQL.cxx")
+        // .file("./deps/lexilla/lexers/LexJSON.cxx")
+        // .file("./deps/lexilla/lexers/LexHTML.cxx")
+        // .file("./deps/lexilla/lexers/LexYAML.cxx")
         .file("./deps/lexilla/lexlib/Accessor.cxx")
         .file("./deps/lexilla/lexlib/CharacterCategory.cxx")
         .file("./deps/lexilla/lexlib/CharacterSet.cxx")
@@ -82,8 +72,22 @@ fn main() {
         .file("./deps/lexilla/lexlib/PropSetSimple.cxx")
         .file("./deps/lexilla/lexlib/StyleContext.cxx")
         .file("./deps/lexilla/lexlib/WordList.cxx")
-        .file("./deps/lexilla/src/Lexilla.cxx")
-        .compile("lexilla");
+        .file("./deps/lexilla/src/Lexilla.cxx");
+
+    let lexilla_dir = "./deps/lexilla/lexers/";
+    for entry in fs::read_dir(lexilla_dir).unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        if path.is_file() {
+            if let Some(extension) = path.extension() {
+                if extension == "cxx" {
+                    lexilla_builder.file(path);
+                }
+            }
+        }
+    }
+
+    lexilla_builder.compile("lexilla");
 
     println!("cargo:rustc-link-lib=dylib=gdi32");
     println!("cargo:rustc-link-lib=dylib=user32");

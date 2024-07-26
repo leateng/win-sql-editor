@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod lexilla;
 mod scintilla;
 
 extern crate native_windows_derive as nwd;

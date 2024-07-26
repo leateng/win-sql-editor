@@ -2,6 +2,7 @@ mod bindings;
 pub use bindings::*;
 
 extern crate native_windows_gui as nwg;
+use crate::lexilla::CreateLexer;
 use nwg::{ControlBase, ControlHandle, NwgError};
 use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
@@ -30,6 +31,7 @@ pub struct ScintillaEdit {
     pub handle: ControlHandle,
     sci_direct_ptr: sptr_t,
     font: String,
+    lexer: String,
 }
 
 extern "C" {
@@ -105,24 +107,22 @@ impl<'a> ScintillaEditBuilder<'a> {
             )
         };
         out.font = "Courier New".into();
+        out.lexer = "sql".into();
 
         out.set_technology(SC_TECHNOLOGY_DIRECTWRITERETAIN as usize);
         out.set_font_quality(SC_EFF_QUALITY_ANTIALIASED as usize);
-        // out.sci_call(SCI_SETFONTQUALITY, SC_EFF_QUALITY_ANTIALIASED as usize, 0);
         out.sci_call(SCI_SETIMEINTERACTION, SC_IME_INLINE as usize, 0);
+        out.sci_call(
+            SCI_STYLESETFONT,
+            STYLE_DEFAULT as usize,
+            out.font.as_ptr() as isize,
+        );
         out.set_font_size(12);
 
-        // 设置字体为 "Segoe UI Emoji"
-        // let font = Box::new(WString::from_str("FiraCode Nerd Font Mono"));
-        // let font = "FiraCode Nerd Font Mono";
-        unsafe {
-            winapi::um::winuser::SendMessageW(
-                out.handle.hwnd().unwrap(),
-                SCI_STYLESETFONT,
-                STYLE_DEFAULT as usize,
-                out.font.as_ptr() as isize,
-            );
-        }
+        let ilexer = unsafe { CreateLexer(out.lexer.as_ptr() as *const std::ffi::c_char) };
+
+        println!("ilexer = {:?}", ilexer);
+        out.sci_call(SCI_SETILEXER, 0 as usize, ilexer as isize);
 
         // Example: set some text with emoji
         // let text = WString::from_str("Hello, world! 😊🌍");
@@ -220,6 +220,7 @@ impl From<ControlHandle> for ScintillaEdit {
             handle,
             sci_direct_ptr,
             font: String::from("Consolas"),
+            lexer: String::from("sql"),
         }
     }
 }
