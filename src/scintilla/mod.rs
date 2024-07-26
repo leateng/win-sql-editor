@@ -219,7 +219,7 @@ impl From<ControlHandle> for ScintillaEdit {
         ScintillaEdit {
             handle,
             sci_direct_ptr,
-            font: String::from("Consolas"),
+            font: String::from("Courier New"),
             lexer: String::from("sql"),
         }
     }
