@@ -24,7 +24,7 @@ pub struct ScintillaEditBuilder<'a> {
     parent: Option<ControlHandle>,
 }
 
-#[derive(Default, PartialEq)]
+#[derive(Default, PartialEq, Clone)]
 pub struct ScintillaEdit {
     pub handle: ControlHandle,
     sci_direct_ptr: sptr_t,
@@ -128,10 +128,15 @@ impl<'a> ScintillaEditBuilder<'a> {
         );
         out.set_font_size(12);
 
-        // let ilexer = unsafe { CreateLexer(out.lexer.as_ptr() as *const std::ffi::c_char) };
+        // static LEX_NAME: &str = "sql";
         let ilexer = unsafe { CreateLexer("sql".as_ptr() as *const i8) };
+        // let ilexer = unsafe { CreateLexer(out.lexer.as_ptr() as *const std::ffi::c_char) };
         println!("ilexer = {:?}", ilexer);
         out.sci_call(SCI_SETILEXER, 0_usize, ilexer as isize);
+
+        // style defines
+        out.sci_call(SCI_STYLESETFORE, 4, 0x00FF00);
+        out.sci_call(SCI_STYLESETFORE, 5, 0xFF0000);
 
         // Example: set some text with emoji
         // let text = WString::from_str("Hello, world! 😊🌍");
@@ -146,6 +151,7 @@ impl<'a> ScintillaEditBuilder<'a> {
 
         // events, observe scintilla events on it's parent control
         let hwnd = out.handle.hwnd().unwrap();
+        let edit2 = out.clone();
         let _ = nwg::bind_raw_event_handler(&parent, 0xFFFF + 100, move |_hwnd, msg, w, l| {
             // use winapi::shared::minwindef::{HIWORD, LOWORD};
             use winapi::um::winuser::{NMHDR, WM_NOTIFY};
@@ -157,8 +163,9 @@ impl<'a> ScintillaEditBuilder<'a> {
                 if nmhdr.hwndFrom == hwnd {
                     match nmhdr.code {
                         SCN_MODIFIED => {
+                            edit2.sci_call(SCI_COLOURISE, 0, -1);
                             // 例如 SCN_MODIFIED 事件
-                            println!("Text modified!");
+                            // println!("Text modified!");
                             // let scn: &SCNotification = unsafe { &*(w as *const SCNotification) };
                             // println!("scn = {:?}", scn);
                         }
