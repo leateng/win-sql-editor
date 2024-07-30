@@ -39,13 +39,6 @@ impl PartialEq<ScintillaEdit> for ControlHandle {
     }
 }
 
-impl PartialEq<ControlHandle> for ScintillaEdit {
-    fn eq(&self, other: &ControlHandle) -> bool {
-        println!("PartialEq222");
-        self.handle == *other
-    }
-}
-
 extern "C" {
     pub fn Scintilla_RegisterClasses(
         hInstance: *mut ::std::os::raw::c_void,
