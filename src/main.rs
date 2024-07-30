@@ -8,26 +8,29 @@ extern crate native_windows_gui as nwg;
 
 use crate::scintilla::{register_window_class, ScintillaEdit};
 use nwd::NwgUi;
+// use nwg::Event;
 use nwg::NativeUi;
 // use tokio;
 // use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_VISIBLE};
 
 use nwg::stretch::{
     geometry::{Rect, Size},
-    style::{AlignSelf, Dimension as D, FlexDirection},
+    style::{Dimension as D, FlexDirection},
 };
 
-const FIFTY_PC: D = D::Percent(0.5);
-const PT_10: D = D::Points(10.0);
-const PT_2: D = D::Points(2.0);
-const PT_5: D = D::Points(5.0);
 const PT_0: D = D::Points(0.0);
-const PADDING: Rect<D> = Rect {
-    start: PT_10,
-    end: PT_10,
-    top: PT_10,
-    bottom: PT_10,
-};
+// const PT_2: D = D::Points(2.0);
+// const PT_5: D = D::Points(5.0);
+// const PT_10: D = D::Points(10.0);
+//
+// const FIFTY_PC: D = D::Percent(0.5);
+//
+// const PADDING: Rect<D> = Rect {
+//     start: PT_10,
+//     end: PT_10,
+//     top: PT_10,
+//     bottom: PT_10,
+// };
 const MARGIN_0: Rect<D> = Rect {
     start: PT_0,
     end: PT_0,
@@ -35,29 +38,28 @@ const MARGIN_0: Rect<D> = Rect {
     bottom: PT_0,
 };
 
-const MARGIN_2: Rect<D> = Rect {
-    start: PT_2,
-    end: PT_2,
-    top: PT_2,
-    bottom: PT_2,
-};
-
-const MARGIN_5: Rect<D> = Rect {
-    start: PT_5,
-    end: PT_5,
-    top: PT_5,
-    bottom: PT_5,
-};
+// const MARGIN_2: Rect<D> = Rect {
+//     start: PT_2,
+//     end: PT_2,
+//     top: PT_2,
+//     bottom: PT_2,
+// };
+//
+// const MARGIN_5: Rect<D> = Rect {
+//     start: PT_5,
+//     end: PT_5,
+//     top: PT_5,
+//     bottom: PT_5,
+// };
 
 #[derive(Default, NwgUi)]
 pub struct BasicApp {
     #[nwg_control(size: (800, 600), position: (300, 300), title: "SQL Editor", flags: "MAIN_WINDOW|VISIBLE")]
-    #[nwg_events( OnWindowClose: [BasicApp::say_goodbye] , OnResize: [BasicApp::on_resize])]
+    #[nwg_events( OnWindowClose: [BasicApp::say_goodbye] , OnResize: [BasicApp::on_resize(SELF)])]
     window: nwg::Window,
 
     // #[nwg_layout(parent: window, spacing: 2, min_size: [150, 140])]
     // grid: nwg::GridLayout,
-
     // #[nwg_control(text: "Heisenberg", size: (280, 25), position: (10, 10))]
     // name_edit: nwg::TextInput,
 
@@ -67,7 +69,8 @@ pub struct BasicApp {
     #[nwg_layout(parent: window, flex_direction: FlexDirection::Row)]
     layout: nwg::FlexboxLayout,
 
-    #[nwg_control(position: (100, 100))]
+    #[nwg_control()]
+    #[nwg_events(OnResize:[ScintillaEdit::on_resize(CTRL)], OnInit: [ScintillaEdit::setup_event(CTRL)])]
     #[nwg_layout_item(layout: layout,
         margin: MARGIN_0,
         max_size: Size { width: D::Percent(1.0), height: D::Auto},
@@ -77,10 +80,6 @@ pub struct BasicApp {
 }
 
 impl BasicApp {
-    fn say_hello(&self) {
-        nwg::simple_message("Hello😀", &format!("Hello😀 {}", "123"));
-    }
-
     fn say_goodbye(&self) {
         nwg::simple_message("Goodbye", &format!("Goodbye {}", "123"));
         nwg::stop_thread_dispatch();

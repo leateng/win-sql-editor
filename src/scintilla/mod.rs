@@ -3,20 +3,18 @@ pub use bindings::*;
 
 extern crate native_windows_gui as nwg;
 use crate::lexilla::CreateLexer;
+// use nwg::TabsContainer;
+// use nwg::{bind_raw_event_handler, Event, EventData, RawEventHandler};
 use nwg::{ControlBase, ControlHandle, NwgError};
-use std::ffi::OsStr;
-use std::os::windows::ffi::OsStrExt;
+// use std::cell::RefCell;
+// use std::ffi::OsStr;
+// use std::os::windows::ffi::OsStrExt;
 use std::ptr::null_mut;
 use std::{isize, mem};
-use winapi;
+// use winapi;
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
-// static DEFAULT_FONT: String = "Courier New".into();
 static mut SCI_FN_DIRECT: SciFnDirect = None;
-
-pub struct WString {
-    inner: Vec<u16>,
-}
 
 pub struct ScintillaEditBuilder<'a> {
     text: &'a str,
@@ -26,12 +24,26 @@ pub struct ScintillaEditBuilder<'a> {
     parent: Option<ControlHandle>,
 }
 
-#[derive(Default, Eq, PartialEq)]
+#[derive(Default, PartialEq)]
 pub struct ScintillaEdit {
     pub handle: ControlHandle,
     sci_direct_ptr: sptr_t,
     font: String,
     lexer: String,
+}
+
+impl PartialEq<ScintillaEdit> for ControlHandle {
+    fn eq(&self, other: &ScintillaEdit) -> bool {
+        println!("PartialEq");
+        *self == other.handle
+    }
+}
+
+impl PartialEq<ControlHandle> for ScintillaEdit {
+    fn eq(&self, other: &ControlHandle) -> bool {
+        println!("PartialEq222");
+        self.handle == *other
+    }
 }
 
 extern "C" {
@@ -44,20 +56,24 @@ pub fn register_window_class() -> bool {
     unsafe {
         let instance = winapi::um::libloaderapi::GetModuleHandleW(null_mut());
         let status = Scintilla_RegisterClasses(instance as *mut std::ffi::c_void);
-        return status != 0;
+        status != 0
     }
 }
 
-impl WString {
-    pub fn from_str(s: &str) -> WString {
-        let wide: Vec<u16> = OsStr::new(s).encode_wide().chain(Some(0)).collect();
-        WString { inner: wide }
-    }
+// pub struct WString {
+//     inner: Vec<u16>,
+// }
 
-    pub fn as_ptr(&self) -> *const u16 {
-        self.inner.as_ptr()
-    }
-}
+// impl WString {
+//     pub fn from_str(s: &str) -> WString {
+//         let wide: Vec<u16> = OsStr::new(s).encode_wide().chain(Some(0)).collect();
+//         WString { inner: wide }
+//     }
+//
+//     pub fn as_ptr(&self) -> *const u16 {
+//         self.inner.as_ptr()
+//     }
+// }
 
 impl<'a> ScintillaEditBuilder<'a> {
     pub fn size(mut self, size: (i32, i32)) -> ScintillaEditBuilder<'a> {
@@ -102,8 +118,8 @@ impl<'a> ScintillaEditBuilder<'a> {
             winapi::um::winuser::SendMessageW(
                 out.handle.hwnd().unwrap(),
                 SCI_GETDIRECTPOINTER,
-                0 as usize,
-                0 as isize,
+                0_usize,
+                0_isize,
             )
         };
         out.font = "Courier New".into();
@@ -119,10 +135,10 @@ impl<'a> ScintillaEditBuilder<'a> {
         );
         out.set_font_size(12);
 
-        let ilexer = unsafe { CreateLexer(out.lexer.as_ptr() as *const std::ffi::c_char) };
-
+        // let ilexer = unsafe { CreateLexer(out.lexer.as_ptr() as *const std::ffi::c_char) };
+        let ilexer = unsafe { CreateLexer("sql".as_ptr() as *const i8) };
         println!("ilexer = {:?}", ilexer);
-        out.sci_call(SCI_SETILEXER, 0 as usize, ilexer as isize);
+        out.sci_call(SCI_SETILEXER, 0_usize, ilexer as isize);
 
         // Example: set some text with emoji
         // let text = WString::from_str("Hello, world! 😊🌍");
@@ -134,6 +150,27 @@ impl<'a> ScintillaEditBuilder<'a> {
         //         text.as_ptr() as isize,
         //     );
         // }
+
+        // events
+        let _ = nwg::bind_raw_event_handler(&out.handle, 0xFFFF + 100, move |hwnd, msg, _w, l| {
+            // use winapi::shared::minwindef::{HIWORD, LOWORD};
+            use winapi::um::winuser::{NMHDR, WM_NOTIFY};
+
+            if msg == WM_NOTIFY {
+                println!("WM_NOTIFY!");
+                let nmhdr: &NMHDR = unsafe { &*(l as *const NMHDR) };
+                if nmhdr.hwndFrom == hwnd {
+                    match nmhdr.code {
+                        SCN_MODIFIED => {
+                            // 例如 SCN_MODIFIED 事件
+                            println!("Text modified!");
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            None
+        });
 
         Ok(())
     }
@@ -177,8 +214,8 @@ impl ScintillaEdit {
                     let fp = winapi::um::winuser::SendMessageW(
                         self.handle.hwnd().unwrap(),
                         SCI_GETDIRECTFUNCTION,
-                        0 as usize,
-                        0 as isize,
+                        0_usize,
+                        0_isize,
                     );
 
                     SCI_FN_DIRECT = mem::transmute(fp);
@@ -204,29 +241,17 @@ impl ScintillaEdit {
     pub fn set_font_quality(&self, font_quality: usize) {
         self.sci_call(SCI_SETFONTQUALITY, font_quality, 0);
     }
-}
 
-impl From<ControlHandle> for ScintillaEdit {
-    fn from(handle: ControlHandle) -> ScintillaEdit {
-        let sci_direct_ptr = unsafe {
-            winapi::um::winuser::SendMessageW(
-                handle.hwnd().unwrap(),
-                SCI_GETDIRECTPOINTER,
-                0 as usize,
-                0 as isize,
-            )
-        };
-        ScintillaEdit {
-            handle,
-            sci_direct_ptr,
-            font: String::from("Courier New"),
-            lexer: String::from("sql"),
-        }
+    pub fn on_resize(&self) {
+        println!("resize scintilla");
+    }
+    pub fn setup_event(&self) {
+        println!("setup scintilla event");
     }
 }
 
-impl Into<ControlHandle> for &ScintillaEdit {
-    fn into(self) -> ControlHandle {
-        self.handle
+impl From<&ScintillaEdit> for ControlHandle {
+    fn from(val: &ScintillaEdit) -> Self {
+        val.handle
     }
 }
