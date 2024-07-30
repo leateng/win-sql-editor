@@ -144,19 +144,23 @@ impl<'a> ScintillaEditBuilder<'a> {
         //     );
         // }
 
-        // events
-        let _ = nwg::bind_raw_event_handler(&out.handle, 0xFFFF + 100, move |hwnd, msg, _w, l| {
+        // events, observe scintilla events on it's parent control
+        let hwnd = out.handle.hwnd().unwrap();
+        let _ = nwg::bind_raw_event_handler(&parent, 0xFFFF + 100, move |_hwnd, msg, w, l| {
             // use winapi::shared::minwindef::{HIWORD, LOWORD};
             use winapi::um::winuser::{NMHDR, WM_NOTIFY};
 
             if msg == WM_NOTIFY {
-                println!("WM_NOTIFY!");
                 let nmhdr: &NMHDR = unsafe { &*(l as *const NMHDR) };
+
+                // handle the message send from current scintilla control
                 if nmhdr.hwndFrom == hwnd {
                     match nmhdr.code {
                         SCN_MODIFIED => {
                             // 例如 SCN_MODIFIED 事件
                             println!("Text modified!");
+                            // let scn: &SCNotification = unsafe { &*(w as *const SCNotification) };
+                            // println!("scn = {:?}", scn);
                         }
                         _ => {}
                     }
