@@ -2,7 +2,11 @@ mod bindings;
 pub use bindings::*;
 
 extern crate native_windows_gui as nwg;
-use crate::lexilla::CreateLexer;
+use crate::lexilla::{
+    self, SCE_SQL_CHARACTER, SCE_SQL_COMMENTDOC, SCE_SQL_DEFAULT, SCE_SQL_NUMBER, SCE_SQL_SQLPLUS,
+    SCE_SQL_STRING, SCE_SQL_WORD, SCE_SQL_WORD2,
+};
+use crate::lexilla::{CreateLexer, SCE_SQL_COMMENT, SCE_SQL_COMMENTLINE};
 // use nwg::TabsContainer;
 // use nwg::{bind_raw_event_handler, Event, EventData, RawEventHandler};
 use nwg::{ControlBase, ControlHandle, NwgError};
@@ -15,6 +19,16 @@ use std::{isize, mem};
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
 static mut SCI_FN_DIRECT: SciFnDirect = None;
+
+macro_rules! rgb_to_bgr {
+    ($rgb:expr) => {{
+        let rgb = $rgb;
+        let r = (rgb >> 16) & 0xFF;
+        let g = (rgb >> 8) & 0xFF;
+        let b = rgb & 0xFF;
+        (b << 16) | (g << 8) | r
+    }};
+}
 
 pub struct ScintillaEditBuilder<'a> {
     text: &'a str,
@@ -135,8 +149,132 @@ impl<'a> ScintillaEditBuilder<'a> {
         out.sci_call(SCI_SETILEXER, 0_usize, ilexer as isize);
 
         // style defines
-        out.sci_call(SCI_STYLESETFORE, 4, 0x00FF00);
-        out.sci_call(SCI_STYLESETFORE, 5, 0xFF0000);
+        // default
+        out.sci_call(
+            SCI_STYLESETFORE,
+            STYLE_DEFAULT as usize,
+            rgb_to_bgr!(0xABB2BF),
+        );
+        out.sci_call(
+            SCI_STYLESETBACK,
+            STYLE_DEFAULT as usize,
+            rgb_to_bgr!(0x282c34),
+        );
+
+        //sql default
+        out.sci_call(
+            SCI_STYLESETFORE,
+            SCE_SQL_DEFAULT as usize,
+            rgb_to_bgr!(0xABB2BF),
+        );
+        out.sci_call(
+            SCI_STYLESETBACK,
+            SCE_SQL_DEFAULT as usize,
+            rgb_to_bgr!(0x282c34),
+        );
+
+        // comment
+        out.sci_call(
+            SCI_STYLESETFORE,
+            SCE_SQL_COMMENT as usize,
+            rgb_to_bgr!(0x7F848E),
+        );
+        out.sci_call(
+            SCI_STYLESETBACK,
+            SCE_SQL_COMMENT as usize,
+            rgb_to_bgr!(0x282c34),
+        );
+
+        // comment line
+        out.sci_call(
+            SCI_STYLESETFORE,
+            SCE_SQL_COMMENTLINE as usize,
+            rgb_to_bgr!(0x7F848E),
+        );
+        out.sci_call(
+            SCI_STYLESETBACK,
+            SCE_SQL_COMMENTLINE as usize,
+            rgb_to_bgr!(0x282c34),
+        );
+
+        // comment doc
+        out.sci_call(
+            SCI_STYLESETFORE,
+            SCE_SQL_COMMENTDOC as usize,
+            rgb_to_bgr!(0x7F848E),
+        );
+        out.sci_call(
+            SCI_STYLESETBACK,
+            SCE_SQL_COMMENTDOC as usize,
+            rgb_to_bgr!(0x282c34),
+        );
+
+        // number
+        out.sci_call(
+            SCI_STYLESETFORE,
+            SCE_SQL_NUMBER as usize,
+            rgb_to_bgr!(0xD19A66),
+        );
+        out.sci_call(
+            SCI_STYLESETBACK,
+            SCE_SQL_NUMBER as usize,
+            rgb_to_bgr!(0x282c34),
+        );
+
+        // keyword
+        out.sci_call(
+            SCI_STYLESETFORE,
+            SCE_SQL_WORD as usize,
+            rgb_to_bgr!(0xC678dd),
+        );
+        out.sci_call(
+            SCI_STYLESETBACK,
+            SCE_SQL_WORD as usize,
+            rgb_to_bgr!(0x282c34),
+        );
+
+        // double quote string
+        out.sci_call(
+            SCI_STYLESETFORE,
+            SCE_SQL_STRING as usize,
+            rgb_to_bgr!(0x98C379),
+        );
+        out.sci_call(
+            SCI_STYLESETBACK,
+            SCE_SQL_STRING as usize,
+            rgb_to_bgr!(0x282c34),
+        );
+
+        // character
+        out.sci_call(
+            SCI_STYLESETFORE,
+            SCE_SQL_CHARACTER as usize,
+            rgb_to_bgr!(0xFF000),
+        );
+        out.sci_call(
+            SCI_STYLESETBACK,
+            SCE_SQL_CHARACTER as usize,
+            rgb_to_bgr!(0x282c34),
+        );
+
+        // sql plus
+        out.sci_call(
+            SCI_STYLESETFORE,
+            SCE_SQL_SQLPLUS as usize,
+            rgb_to_bgr!(0xFF000),
+        );
+        out.sci_call(
+            SCI_STYLESETBACK,
+            SCE_SQL_SQLPLUS as usize,
+            rgb_to_bgr!(0x282c34),
+        );
+
+        // out.sci_call(SCI_STYLESETFORE, SCE_SQL_WORD2 as usize, 0xDD78C6);
+        // out.sci_call(
+        //     SCI_STYLESETBACK,
+        //     SCE_SQL_WORD2 as usize,
+        //     rgb_to_bgr!(0x282c34),
+        // );
 
         // Example: set some text with emoji
         // let text = WString::from_str("Hello, world! 😊🌍");
