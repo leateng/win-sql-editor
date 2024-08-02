@@ -3,8 +3,10 @@ pub use bindings::*;
 
 extern crate native_windows_gui as nwg;
 use crate::lexilla::{
-    self, SCE_SQL_CHARACTER, SCE_SQL_COMMENTDOC, SCE_SQL_DEFAULT, SCE_SQL_NUMBER, SCE_SQL_SQLPLUS,
-    SCE_SQL_STRING, SCE_SQL_WORD, SCE_SQL_WORD2,
+    self, SCE_SQL_CHARACTER, SCE_SQL_COMMENTDOC, SCE_SQL_COMMENTDOCKEYWORD,
+    SCE_SQL_COMMENTDOCKEYWORDERROR, SCE_SQL_DEFAULT, SCE_SQL_IDENTIFIER, SCE_SQL_NUMBER,
+    SCE_SQL_OPERATOR, SCE_SQL_SQLPLUS, SCE_SQL_SQLPLUS_PROMPT, SCE_SQL_STRING, SCE_SQL_USER1,
+    SCE_SQL_USER2, SCE_SQL_USER3, SCE_SQL_USER4, SCE_SQL_WORD, SCE_SQL_WORD2,
 };
 use crate::lexilla::{CreateLexer, SCE_SQL_COMMENT, SCE_SQL_COMMENTLINE};
 // use nwg::TabsContainer;
@@ -19,6 +21,7 @@ use std::{isize, mem};
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
 static mut SCI_FN_DIRECT: SciFnDirect = None;
+pub const SQL_LEXER: &[u8; 4] = b"sql\0";
 
 macro_rules! rgb_to_bgr {
     ($rgb:expr) => {{
@@ -143,138 +146,11 @@ impl<'a> ScintillaEditBuilder<'a> {
         out.set_font_size(12);
 
         // static LEX_NAME: &str = "sql";
-        let ilexer = unsafe { CreateLexer("sql".as_ptr() as *const i8) };
+        let ilexer = unsafe { CreateLexer(SQL_LEXER.as_ptr() as *const std::ffi::c_char) };
         // let ilexer = unsafe { CreateLexer(out.lexer.as_ptr() as *const std::ffi::c_char) };
         println!("ilexer = {:?}", ilexer);
         out.sci_call(SCI_SETILEXER, 0_usize, ilexer as isize);
-
-        // style defines
-        // default
-        out.sci_call(
-            SCI_STYLESETFORE,
-            STYLE_DEFAULT as usize,
-            rgb_to_bgr!(0xABB2BF),
-        );
-        out.sci_call(
-            SCI_STYLESETBACK,
-            STYLE_DEFAULT as usize,
-            rgb_to_bgr!(0x282c34),
-        );
-
-        //sql default
-        out.sci_call(
-            SCI_STYLESETFORE,
-            SCE_SQL_DEFAULT as usize,
-            rgb_to_bgr!(0xABB2BF),
-        );
-        out.sci_call(
-            SCI_STYLESETBACK,
-            SCE_SQL_DEFAULT as usize,
-            rgb_to_bgr!(0x282c34),
-        );
-
-        // comment
-        out.sci_call(
-            SCI_STYLESETFORE,
-            SCE_SQL_COMMENT as usize,
-            rgb_to_bgr!(0x7F848E),
-        );
-        out.sci_call(
-            SCI_STYLESETBACK,
-            SCE_SQL_COMMENT as usize,
-            rgb_to_bgr!(0x282c34),
-        );
-
-        // comment line
-        out.sci_call(
-            SCI_STYLESETFORE,
-            SCE_SQL_COMMENTLINE as usize,
-            rgb_to_bgr!(0x7F848E),
-        );
-        out.sci_call(
-            SCI_STYLESETBACK,
-            SCE_SQL_COMMENTLINE as usize,
-            rgb_to_bgr!(0x282c34),
-        );
-
-        // comment doc
-        out.sci_call(
-            SCI_STYLESETFORE,
-            SCE_SQL_COMMENTDOC as usize,
-            rgb_to_bgr!(0x7F848E),
-        );
-        out.sci_call(
-            SCI_STYLESETBACK,
-            SCE_SQL_COMMENTDOC as usize,
-            rgb_to_bgr!(0x282c34),
-        );
-
-        // number
-        out.sci_call(
-            SCI_STYLESETFORE,
-            SCE_SQL_NUMBER as usize,
-            rgb_to_bgr!(0xD19A66),
-        );
-        out.sci_call(
-            SCI_STYLESETBACK,
-            SCE_SQL_NUMBER as usize,
-            rgb_to_bgr!(0x282c34),
-        );
-
-        // keyword
-        out.sci_call(
-            SCI_STYLESETFORE,
-            SCE_SQL_WORD as usize,
-            rgb_to_bgr!(0xC678dd),
-        );
-        out.sci_call(
-            SCI_STYLESETBACK,
-            SCE_SQL_WORD as usize,
-            rgb_to_bgr!(0x282c34),
-        );
-
-        // double quote string
-        out.sci_call(
-            SCI_STYLESETFORE,
-            SCE_SQL_STRING as usize,
-            rgb_to_bgr!(0x98C379),
-        );
-        out.sci_call(
-            SCI_STYLESETBACK,
-            SCE_SQL_STRING as usize,
-            rgb_to_bgr!(0x282c34),
-        );
-
-        // character
-        out.sci_call(
-            SCI_STYLESETFORE,
-            SCE_SQL_CHARACTER as usize,
-            rgb_to_bgr!(0xFF000),
-        );
-        out.sci_call(
-            SCI_STYLESETBACK,
-            SCE_SQL_CHARACTER as usize,
-            rgb_to_bgr!(0x282c34),
-        );
-
-        // sql plus
-        out.sci_call(
-            SCI_STYLESETFORE,
-            SCE_SQL_SQLPLUS as usize,
-            rgb_to_bgr!(0xFF000),
-        );
-        out.sci_call(
-            SCI_STYLESETBACK,
-            SCE_SQL_SQLPLUS as usize,
-            rgb_to_bgr!(0x282c34),
-        );
-
-        // out.sci_call(SCI_STYLESETFORE, SCE_SQL_WORD2 as usize, 0xDD78C6);
-        // out.sci_call(
-        //     SCI_STYLESETBACK,
-        //     SCE_SQL_WORD2 as usize,
-        //     rgb_to_bgr!(0x282c34),
-        // );
+        out.set_lexer_style();
 
         // Example: set some text with emoji
         // let text = WString::from_str("Hello, world! 😊🌍");
@@ -290,7 +166,7 @@ impl<'a> ScintillaEditBuilder<'a> {
         // events, observe scintilla events on it's parent control
         let hwnd = out.handle.hwnd().unwrap();
         let edit2 = out.clone();
-        let _ = nwg::bind_raw_event_handler(&parent, 0xFFFF + 100, move |_hwnd, msg, w, l| {
+        let _ = nwg::bind_raw_event_handler(&parent, 0xFFFF + 100, move |_hwnd, msg, _w, l| {
             // use winapi::shared::minwindef::{HIWORD, LOWORD};
             use winapi::um::winuser::{NMHDR, WM_NOTIFY};
 
@@ -382,6 +258,75 @@ impl ScintillaEdit {
 
     pub fn set_font_quality(&self, font_quality: usize) {
         self.sci_call(SCI_SETFONTQUALITY, font_quality, 0);
+    }
+
+    pub fn set_lexer_elem_color(&self, elem: u32, fore: u32, back: u32) {
+        self.sci_call(SCI_STYLESETFORE, elem as usize, rgb_to_bgr!(fore) as isize);
+        self.sci_call(SCI_STYLESETBACK, elem as usize, rgb_to_bgr!(back) as isize);
+    }
+
+    pub fn set_lexer_style(&self) {
+        let default_bg = 0x282C34;
+        // style defines
+        // default
+        self.set_lexer_elem_color(STYLE_DEFAULT, 0xABB2BF, default_bg);
+
+        //sql default
+        self.set_lexer_elem_color(SCE_SQL_DEFAULT, 0xABB2BF, default_bg);
+
+        // comment
+        self.set_lexer_elem_color(SCE_SQL_COMMENT, 0x7F848E, default_bg);
+
+        // comment line
+        self.set_lexer_elem_color(SCE_SQL_COMMENTLINE, 0x7F848E, default_bg);
+
+        // comment doc
+        self.set_lexer_elem_color(SCE_SQL_COMMENTDOC, 0x7F848E, default_bg);
+
+        // number
+        self.set_lexer_elem_color(SCE_SQL_NUMBER, 0xD19A66, default_bg);
+
+        // keyword
+        self.set_lexer_elem_color(SCE_SQL_WORD, 0xC678DD, default_bg);
+
+        // double quote string
+        self.set_lexer_elem_color(SCE_SQL_STRING, 0x98C379, default_bg);
+
+        // character, single quote string
+        self.set_lexer_elem_color(SCE_SQL_CHARACTER, 0x98C379, default_bg);
+
+        // sql plus
+        self.set_lexer_elem_color(SCE_SQL_SQLPLUS, 0xFF000, default_bg);
+
+        // sql plus prompt
+        self.set_lexer_elem_color(SCE_SQL_SQLPLUS_PROMPT, 0xFF000, default_bg);
+
+        // operator
+        self.set_lexer_elem_color(SCE_SQL_OPERATOR, 0xABB2BF, default_bg);
+
+        // identifer
+        self.set_lexer_elem_color(SCE_SQL_IDENTIFIER, 0xABB2BF, default_bg);
+
+        // word2
+        self.set_lexer_elem_color(SCE_SQL_WORD2, 0xC678DD, default_bg);
+
+        // comment doc word
+        self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORD, 0xFF0000, default_bg);
+
+        // comment doc word error
+        self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORDERROR, 0xFF0000, default_bg);
+
+        // user1
+        self.set_lexer_elem_color(SCE_SQL_USER1, 0xFF0000, default_bg);
+
+        // user2
+        self.set_lexer_elem_color(SCE_SQL_USER2, 0xFF0000, default_bg);
+
+        // user3
+        self.set_lexer_elem_color(SCE_SQL_USER3, 0xFF0000, default_bg);
+
+        // user4
+        self.set_lexer_elem_color(SCE_SQL_USER4, 0xFF0000, default_bg);
     }
 
     pub fn on_resize(&self) {
