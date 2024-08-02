@@ -23,13 +23,17 @@ use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 static mut SCI_FN_DIRECT: SciFnDirect = None;
 pub const SQL_LEXER: &[u8; 4] = b"sql\0";
 
-macro_rules! rgb_to_bgr {
-    ($rgb:expr) => {{
-        let rgb = $rgb;
-        let r = (rgb >> 16) & 0xFF;
-        let g = (rgb >> 8) & 0xFF;
-        let b = rgb & 0xFF;
-        (b << 16) | (g << 8) | r
+macro_rules! scintilla_color {
+    ($hex:expr) => {{
+        let hex = $hex.trim_start_matches('#');
+        if hex.len() == 6 {
+            let r = u32::from_str_radix(&hex[0..2], 16).expect("Invalid hex format");
+            let g = u32::from_str_radix(&hex[2..4], 16).expect("Invalid hex format");
+            let b = u32::from_str_radix(&hex[4..6], 16).expect("Invalid hex format");
+            (b << 16) | (g << 8) | r
+        } else {
+            panic!("Invalid RGB format, expected #RRGGBB");
+        }
     }};
 }
 
@@ -261,12 +265,12 @@ impl ScintillaEdit {
     }
 
     pub fn set_lexer_elem_color(&self, elem: u32, fore: u32, back: u32) {
-        self.sci_call(SCI_STYLESETFORE, elem as usize, rgb_to_bgr!(fore) as isize);
-        self.sci_call(SCI_STYLESETBACK, elem as usize, rgb_to_bgr!(back) as isize);
+        self.sci_call(SCI_STYLESETFORE, elem as usize, fore as isize);
+        self.sci_call(SCI_STYLESETBACK, elem as usize, back as isize);
     }
 
     pub fn set_lexer_style(&self) {
-        let default_bg = 0x282C34;
+        let default_bg = scintilla_color!("#282C34");
         // style defines
         // default
         self.set_lexer_elem_color(STYLE_DEFAULT, 0xABB2BF, default_bg);
