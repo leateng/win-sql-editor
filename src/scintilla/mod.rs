@@ -154,7 +154,9 @@ impl<'a> ScintillaEditBuilder<'a> {
         // let ilexer = unsafe { CreateLexer(out.lexer.as_ptr() as *const std::ffi::c_char) };
         println!("ilexer = {:?}", ilexer);
         out.sci_call(SCI_SETILEXER, 0_usize, ilexer as isize);
-        out.set_lexer_style();
+        out.setup_color_scheme();
+        out.setup_caret(2, 0xFFE75C27);
+        // out.sci_call(SCI_SETFOCUS, 1_usize, 0_isize);
 
         // Example: set some text with emoji
         // let text = WString::from_str("Hello, world! 😊🌍");
@@ -269,35 +271,41 @@ impl ScintillaEdit {
         self.sci_call(SCI_STYLESETBACK, elem as usize, back as isize);
     }
 
-    pub fn set_lexer_style(&self) {
+    pub fn setup_color_scheme(&self) {
         let default_bg = scintilla_color!("#282C34");
+        let default_fg = scintilla_color!("#ABB2BF");
+        let comment_fg = scintilla_color!("#7F848E");
+        let number_fg = scintilla_color!("#D19A66");
+        let keyword_fg = scintilla_color!("#C678DD");
+        let string_fg = scintilla_color!("#98C379");
+
         // style defines
         // default
-        self.set_lexer_elem_color(STYLE_DEFAULT, 0xABB2BF, default_bg);
+        self.set_lexer_elem_color(STYLE_DEFAULT, default_fg, default_bg);
 
         //sql default
-        self.set_lexer_elem_color(SCE_SQL_DEFAULT, 0xABB2BF, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_DEFAULT, default_fg, default_bg);
 
         // comment
-        self.set_lexer_elem_color(SCE_SQL_COMMENT, 0x7F848E, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_COMMENT, comment_fg, default_bg);
 
         // comment line
-        self.set_lexer_elem_color(SCE_SQL_COMMENTLINE, 0x7F848E, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_COMMENTLINE, comment_fg, default_bg);
 
         // comment doc
-        self.set_lexer_elem_color(SCE_SQL_COMMENTDOC, 0x7F848E, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_COMMENTDOC, comment_fg, default_bg);
 
         // number
-        self.set_lexer_elem_color(SCE_SQL_NUMBER, 0xD19A66, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_NUMBER, number_fg, default_bg);
 
         // keyword
-        self.set_lexer_elem_color(SCE_SQL_WORD, 0xC678DD, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_WORD, keyword_fg, default_bg);
 
         // double quote string
-        self.set_lexer_elem_color(SCE_SQL_STRING, 0x98C379, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_STRING, string_fg, default_bg);
 
         // character, single quote string
-        self.set_lexer_elem_color(SCE_SQL_CHARACTER, 0x98C379, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_CHARACTER, string_fg, default_bg);
 
         // sql plus
         self.set_lexer_elem_color(SCE_SQL_SQLPLUS, 0xFF000, default_bg);
@@ -306,13 +314,13 @@ impl ScintillaEdit {
         self.set_lexer_elem_color(SCE_SQL_SQLPLUS_PROMPT, 0xFF000, default_bg);
 
         // operator
-        self.set_lexer_elem_color(SCE_SQL_OPERATOR, 0xABB2BF, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_OPERATOR, default_fg, default_bg);
 
         // identifer
-        self.set_lexer_elem_color(SCE_SQL_IDENTIFIER, 0xABB2BF, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_IDENTIFIER, default_fg, default_bg);
 
         // word2
-        self.set_lexer_elem_color(SCE_SQL_WORD2, 0xC678DD, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_WORD2, keyword_fg, default_bg);
 
         // comment doc word
         self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORD, 0xFF0000, default_bg);
@@ -331,6 +339,11 @@ impl ScintillaEdit {
 
         // user4
         self.set_lexer_elem_color(SCE_SQL_USER4, 0xFF0000, default_bg);
+    }
+
+    pub fn setup_caret(&self, width: usize, color: isize) {
+        self.sci_call(SCI_SETCARETWIDTH, width, 0_isize);
+        self.sci_call(SCI_SETELEMENTCOLOUR, SC_ELEMENT_CARET as usize, color);
     }
 
     pub fn on_resize(&self) {
