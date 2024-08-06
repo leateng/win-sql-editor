@@ -3,12 +3,12 @@ pub use bindings::*;
 
 extern crate native_windows_gui as nwg;
 use crate::lexilla::{
-    self, create_lexer, ILexer5, SCE_SQL_CHARACTER, SCE_SQL_COMMENTDOC, SCE_SQL_COMMENTDOCKEYWORD,
+    create_lexer, ILexer5, SCE_SQL_CHARACTER, SCE_SQL_COMMENTDOC, SCE_SQL_COMMENTDOCKEYWORD,
     SCE_SQL_COMMENTDOCKEYWORDERROR, SCE_SQL_DEFAULT, SCE_SQL_IDENTIFIER, SCE_SQL_NUMBER,
     SCE_SQL_OPERATOR, SCE_SQL_SQLPLUS, SCE_SQL_SQLPLUS_PROMPT, SCE_SQL_STRING, SCE_SQL_USER1,
     SCE_SQL_USER2, SCE_SQL_USER3, SCE_SQL_USER4, SCE_SQL_WORD, SCE_SQL_WORD2,
 };
-use crate::lexilla::{CreateLexer, SCE_SQL_COMMENT, SCE_SQL_COMMENTLINE};
+use crate::lexilla::{SCE_SQL_COMMENT, SCE_SQL_COMMENTLINE};
 // use nwg::TabsContainer;
 // use nwg::{bind_raw_event_handler, Event, EventData, RawEventHandler};
 use nwg::{ControlBase, ControlHandle, NwgError};
@@ -22,7 +22,6 @@ use std::{isize, mem};
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
 static mut SCI_FN_DIRECT: SciFnDirect = None;
-pub const SQL_LEXER: &[u8; 4] = b"sql\0";
 
 macro_rules! scintilla_rgb_color {
     ($hex:expr) => {{
@@ -50,8 +49,6 @@ pub struct ScintillaEditBuilder<'a> {
 pub struct ScintillaEdit {
     pub handle: ControlHandle,
     sci_direct_ptr: sptr_t,
-    font: String,
-    lexer: String,
 }
 
 impl PartialEq<ScintillaEdit> for ControlHandle {
@@ -137,10 +134,6 @@ impl<'a> ScintillaEditBuilder<'a> {
                 0_isize,
             )
         };
-        // out.font = "Courier New".into();
-        // out.font = "Lucida Console".into();
-        out.font = "Cascadia Code".into();
-        out.lexer = "sql".into();
 
         out.set_technology(SC_TECHNOLOGY_DIRECTWRITERETAIN as usize);
         out.set_font_quality(SC_EFF_QUALITY_ANTIALIASED as usize);
