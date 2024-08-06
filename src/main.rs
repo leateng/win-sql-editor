@@ -81,7 +81,7 @@ pub struct BasicApp {
 
 impl BasicApp {
     fn say_goodbye(&self) {
-        nwg::simple_message("Goodbye", &format!("Goodbye {}", "123"));
+        // nwg::simple_message("Goodbye", &format!("Goodbye {}", "123"));
         nwg::stop_thread_dispatch();
     }
 

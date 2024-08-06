@@ -3,7 +3,7 @@ pub use bindings::*;
 
 extern crate native_windows_gui as nwg;
 use crate::lexilla::{
-    self, SCE_SQL_CHARACTER, SCE_SQL_COMMENTDOC, SCE_SQL_COMMENTDOCKEYWORD,
+    self, create_lexer, ILexer5, SCE_SQL_CHARACTER, SCE_SQL_COMMENTDOC, SCE_SQL_COMMENTDOCKEYWORD,
     SCE_SQL_COMMENTDOCKEYWORDERROR, SCE_SQL_DEFAULT, SCE_SQL_IDENTIFIER, SCE_SQL_NUMBER,
     SCE_SQL_OPERATOR, SCE_SQL_SQLPLUS, SCE_SQL_SQLPLUS_PROMPT, SCE_SQL_STRING, SCE_SQL_USER1,
     SCE_SQL_USER2, SCE_SQL_USER3, SCE_SQL_USER4, SCE_SQL_WORD, SCE_SQL_WORD2,
@@ -12,6 +12,7 @@ use crate::lexilla::{CreateLexer, SCE_SQL_COMMENT, SCE_SQL_COMMENTLINE};
 // use nwg::TabsContainer;
 // use nwg::{bind_raw_event_handler, Event, EventData, RawEventHandler};
 use nwg::{ControlBase, ControlHandle, NwgError};
+use std::ffi::{CStr, CString};
 // use std::cell::RefCell;
 // use std::ffi::OsStr;
 // use std::os::windows::ffi::OsStrExt;
@@ -23,7 +24,7 @@ use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 static mut SCI_FN_DIRECT: SciFnDirect = None;
 pub const SQL_LEXER: &[u8; 4] = b"sql\0";
 
-macro_rules! scintilla_color {
+macro_rules! scintilla_rgb_color {
     ($hex:expr) => {{
         let hex = $hex.trim_start_matches('#');
         if hex.len() == 6 {
@@ -136,38 +137,27 @@ impl<'a> ScintillaEditBuilder<'a> {
                 0_isize,
             )
         };
-        out.font = "Courier New".into();
+        // out.font = "Courier New".into();
+        // out.font = "Lucida Console".into();
+        out.font = "Cascadia Code".into();
         out.lexer = "sql".into();
 
         out.set_technology(SC_TECHNOLOGY_DIRECTWRITERETAIN as usize);
         out.set_font_quality(SC_EFF_QUALITY_ANTIALIASED as usize);
-        out.sci_call(SCI_SETIMEINTERACTION, SC_IME_INLINE as usize, 0);
-        out.sci_call(
-            SCI_STYLESETFONT,
-            STYLE_DEFAULT as usize,
-            out.font.as_ptr() as isize,
-        );
+        out.set_wrap_mode(SC_WRAP_WORD as usize);
+        out.set_wrap_visual_flags(SC_WRAPVISUALFLAG_START as usize);
+        out.set_eol_mode(SC_EOL_CRLF as usize);
+        out.set_tab_width(2 as usize);
+        out.set_end_at_last_line(true);
+        out.set_ime_interaction(SC_IME_INLINE as usize);
+        out.style_set_font(STYLE_DEFAULT as usize, "Cascadia Code");
         out.set_font_size(12);
 
-        // static LEX_NAME: &str = "sql";
-        let ilexer = unsafe { CreateLexer(SQL_LEXER.as_ptr() as *const std::ffi::c_char) };
-        // let ilexer = unsafe { CreateLexer(out.lexer.as_ptr() as *const std::ffi::c_char) };
-        println!("ilexer = {:?}", ilexer);
-        out.sci_call(SCI_SETILEXER, 0_usize, ilexer as isize);
+        let ilexer = create_lexer("sql").unwrap();
+        out.set_ilexer(ilexer);
+        out.set_sql_lexer_keywords();
         out.setup_color_scheme();
         out.setup_caret(2, 0xFFE75C27);
-        // out.sci_call(SCI_SETFOCUS, 1_usize, 0_isize);
-
-        // Example: set some text with emoji
-        // let text = WString::from_str("Hello, world! 😊🌍");
-        // unsafe {
-        //     winapi::um::winuser::SendMessageW(
-        //         out.handle.hwnd().unwrap(),
-        //         SCI_SETTEXT,
-        //         0,
-        //         text.as_ptr() as isize,
-        //     );
-        // }
 
         // events, observe scintilla events on it's parent control
         let hwnd = out.handle.hwnd().unwrap();
@@ -266,18 +256,61 @@ impl ScintillaEdit {
         self.sci_call(SCI_SETFONTQUALITY, font_quality, 0);
     }
 
+    pub fn set_wrap_mode(&self, wrap_mode: usize) {
+        self.sci_call(SCI_SETWRAPMODE, wrap_mode, 0);
+    }
+
+    pub fn set_wrap_visual_flags(&self, wrap_visual_flags: usize) {
+        self.sci_call(SCI_SETWRAPVISUALFLAGS, wrap_visual_flags, 0);
+    }
+
+    pub fn set_eol_mode(&self, eol_mode: usize) {
+        self.sci_call(SCI_SETEOLMODE, eol_mode, 0);
+    }
+
+    pub fn set_tab_width(&self, tab_width: usize) {
+        self.sci_call(SCI_SETTABWIDTH, tab_width, 0);
+    }
+
+    pub fn set_ilexer(&self, ilexer: *mut ILexer5) {
+        self.sci_call(SCI_SETILEXER, 0_usize, ilexer as isize);
+    }
+
+    pub fn style_set_font(&self, style: usize, font: &str) {
+        let c_string = CString::new(font).expect("CString::new failed");
+        let c_str: &CStr = c_string.as_c_str();
+        self.sci_call(SCI_STYLESETFONT, style as usize, c_str.as_ptr() as isize);
+    }
+
+    pub fn set_ime_interaction(&self, ime_interaction: usize) {
+        self.sci_call(SCI_SETIMEINTERACTION, ime_interaction as usize, 0);
+    }
+
+    pub fn set_end_at_last_line(&self, end_at_last_line: bool) {
+        let mut end = 1;
+        if end_at_last_line == true {
+            end = 0;
+        }
+        self.sci_call(SCI_SETENDATLASTLINE, end, 0);
+    }
+
     pub fn set_lexer_elem_color(&self, elem: u32, fore: u32, back: u32) {
         self.sci_call(SCI_STYLESETFORE, elem as usize, fore as isize);
         self.sci_call(SCI_STYLESETBACK, elem as usize, back as isize);
     }
 
+    pub fn set_sql_lexer_keywords(&self) {
+        let keywords = CString::new("select from where order group having").unwrap();
+        self.sci_call(SCI_SETKEYWORDS, 1_usize, keywords.as_ptr() as isize);
+    }
+
     pub fn setup_color_scheme(&self) {
-        let default_bg = scintilla_color!("#282C34");
-        let default_fg = scintilla_color!("#ABB2BF");
-        let comment_fg = scintilla_color!("#7F848E");
-        let number_fg = scintilla_color!("#D19A66");
-        let keyword_fg = scintilla_color!("#C678DD");
-        let string_fg = scintilla_color!("#98C379");
+        let default_bg = scintilla_rgb_color!("#282C34");
+        let default_fg = scintilla_rgb_color!("#ABB2BF");
+        let comment_fg = scintilla_rgb_color!("#7F848E");
+        let number_fg = scintilla_rgb_color!("#D19A66");
+        let keyword_fg = scintilla_rgb_color!("#C678DD");
+        let string_fg = scintilla_rgb_color!("#98C379");
 
         // style defines
         // default
