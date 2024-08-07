@@ -370,6 +370,11 @@ impl ScintillaEdit {
     pub fn setup_caret(&self, width: usize, color: isize) {
         self.sci_call(SCI_SETCARETWIDTH, width, 0_isize);
         self.sci_call(SCI_SETELEMENTCOLOUR, SC_ELEMENT_CARET as usize, color);
+        self.sci_call(
+            SCI_SETELEMENTCOLOUR,
+            SC_ELEMENT_CARET_LINE_BACK as usize,
+            0xFF3E342F,
+        );
     }
 
     pub fn on_resize(&self) {
