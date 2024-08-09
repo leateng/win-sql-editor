@@ -148,7 +148,7 @@ impl<'a> ScintillaEditBuilder<'a> {
 
         let ilexer = create_lexer("sql").unwrap();
         out.set_ilexer(ilexer);
-        out.set_sql_lexer_keywords();
+        out.set_key_words(1, vec!["select", "from", "where"]);
         out.setup_color_scheme();
         out.setup_caret(2, 0xFFE75C27);
 
@@ -292,9 +292,10 @@ impl ScintillaEdit {
         self.sci_call(SCI_STYLESETBACK, elem as usize, back as isize);
     }
 
-    pub fn set_sql_lexer_keywords(&self) {
-        let keywords = CString::new("select from where order group having").unwrap();
-        self.sci_call(SCI_SETKEYWORDS, 1_usize, keywords.as_ptr() as isize);
+    pub fn set_key_words(&self, key_word_set: usize, key_words: Vec<&str>) {
+        let combined_string: String = key_words.join(" ");
+        let kws = CString::new(combined_string).unwrap();
+        self.sci_call(SCI_SETKEYWORDS, key_word_set, kws.as_ptr() as isize);
     }
 
     pub fn setup_color_scheme(&self) {
