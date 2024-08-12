@@ -380,9 +380,12 @@ impl ScintillaEdit {
         self.set_lexer_elem_color(SCE_SQL_USER4, 0xFF0000, default_bg);
     }
 
-    pub fn setup_caret(&self, width: usize, color: isize) {
-        self.sci_call(SCI_SETCARETWIDTH, width, 0_isize);
-        // self.sci_call(SCI_SETELEMENTCOLOUR, SC_ELEMENT_CARET as usize, color);
+    pub fn set_caret_width(&self, width: u32) {
+        self.sci_call(SCI_SETCARETWIDTH, width as usize, 0_isize);
+    }
+
+    pub fn setup_caret(&self, width: u32, color: isize) {
+        self.set_caret_width(width);
         self.set_element_colour(SC_ELEMENT_CARET, color);
         self.set_element_colour(SC_ELEMENT_CARET_LINE_BACK, 0xFF3E342F);
     }
