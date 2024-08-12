@@ -148,7 +148,14 @@ impl<'a> ScintillaEditBuilder<'a> {
 
         let ilexer = create_lexer("sql").unwrap();
         out.set_ilexer(ilexer);
-        out.set_key_words(1, vec!["select", "from", "where"]);
+        out.set_key_words(
+            1,
+            vec![
+                "select", "from", "where", "create", "delete", "update", "drop", "table", "in",
+                "and", "or", "left", "right", "join", "inner", "alter", "default", "order", "by",
+                "desc", "asc", "group", "having", "not", "null", "limit", "add", "column",
+            ],
+        );
         out.setup_color_scheme();
         out.setup_caret(2, 0xFFE75C27);
 
@@ -161,16 +168,26 @@ impl<'a> ScintillaEditBuilder<'a> {
 
             if msg == WM_NOTIFY {
                 let nmhdr: &NMHDR = unsafe { &*(l as *const NMHDR) };
+                let scn: &SCNotification = unsafe { &*(l as *const SCNotification) };
 
                 // handle the message send from current scintilla control
                 if nmhdr.hwndFrom == hwnd {
                     match nmhdr.code {
                         SCN_MODIFIED => {
                             edit2.sci_call(SCI_COLOURISE, 0, -1);
+
+                            if scn.linesAdded != 0 {
+                                edit2.update_line_number();
+                            }
+
                             // 例如 SCN_MODIFIED 事件
                             // println!("Text modified!");
                             // let scn: &SCNotification = unsafe { &*(w as *const SCNotification) };
                             // println!("scn = {:?}", scn);
+                        }
+
+                        SCN_ZOOM => {
+                            edit2.update_line_number();
                         }
                         _ => {}
                     }
@@ -214,7 +231,12 @@ impl ScintillaEdit {
         WS_CHILD
     }
 
-    pub fn sci_call(&self, i_message: ::std::os::raw::c_uint, w_param: uptr_t, l_param: sptr_t) {
+    pub fn sci_call(
+        &self,
+        i_message: ::std::os::raw::c_uint,
+        w_param: uptr_t,
+        l_param: sptr_t,
+    ) -> isize {
         unsafe {
             match SCI_FN_DIRECT {
                 None => {
@@ -227,12 +249,12 @@ impl ScintillaEdit {
 
                     SCI_FN_DIRECT = mem::transmute(fp);
                     if let Some(fp) = SCI_FN_DIRECT {
-                        fp(self.sci_direct_ptr, i_message, w_param, l_param);
+                        fp(self.sci_direct_ptr, i_message, w_param, l_param)
+                    } else {
+                        0
                     }
                 }
-                Some(fp) => {
-                    fp(self.sci_direct_ptr, i_message, w_param, l_param);
-                }
+                Some(fp) => fp(self.sci_direct_ptr, i_message, w_param, l_param),
             }
         }
     }
@@ -322,6 +344,9 @@ impl ScintillaEdit {
         // default
         self.set_lexer_elem_color(STYLE_DEFAULT, default_fg, default_bg);
 
+        // line number
+        self.set_lexer_elem_color(STYLE_LINENUMBER, default_fg, default_bg);
+
         //sql default
         self.set_lexer_elem_color(SCE_SQL_DEFAULT, default_fg, default_bg);
 
@@ -378,6 +403,10 @@ impl ScintillaEdit {
 
         // user4
         self.set_lexer_elem_color(SCE_SQL_USER4, 0xFF0000, default_bg);
+
+        self.set_margins(2);
+        self.set_margin_type_n(0, SC_MARGIN_NUMBER);
+        self.update_line_number();
     }
 
     pub fn set_caret_width(&self, width: u32) {
@@ -390,6 +419,44 @@ impl ScintillaEdit {
         self.set_element_colour(SC_ELEMENT_CARET_LINE_BACK, 0xFF3E342F);
     }
 
+    // margin functions
+    pub fn set_margins(&self, margins: u32) {
+        self.sci_call(SCI_SETMARGINS, margins as usize, 0_isize);
+    }
+
+    pub fn set_margin_type_n(&self, margin: u32, margin_type: u32) {
+        self.sci_call(SCI_SETMARGINTYPEN, margin as usize, margin_type as isize);
+    }
+
+    pub fn set_margin_width_n(&self, margin: u32, width: u32) {
+        self.sci_call(SCI_SETMARGINWIDTHN, margin as usize, width as isize);
+    }
+
+    pub fn set_margin_back_n(&self, margin: u32, colour: u32) {
+        self.sci_call(SCI_SETMARGINBACKN, margin as usize, colour as isize);
+    }
+
+    pub fn get_line_count(&self) -> usize {
+        self.sci_call(SCI_GETLINECOUNT, 0 as usize, 0 as isize) as usize
+    }
+
+    pub fn text_width(&self, style: u32, text: &str) -> u32 {
+        let c_string = CString::new(text).expect("CString::new failed");
+        self.sci_call(
+            SCI_TEXTWIDTH,
+            style as usize,
+            c_string.as_c_str().as_ptr() as isize,
+        ) as u32
+    }
+
+    pub fn update_line_number(&self) {
+        let n = self.get_line_count();
+        let result = format!("00{}", n);
+        let width = self.text_width(STYLE_LINENUMBER, result.as_str());
+        self.set_margin_width_n(0, width);
+    }
+
+    // others
     pub fn on_resize(&self) {
         println!("resize scintilla");
     }
