@@ -287,9 +287,21 @@ impl ScintillaEdit {
         self.sci_call(SCI_SETENDATLASTLINE, end, 0);
     }
 
+    pub fn set_element_colour(&self, element: u32, color: isize) {
+        self.sci_call(SCI_SETELEMENTCOLOUR, element as usize, color);
+    }
+
+    pub fn style_set_fore(&self, element: u32, color: u32) {
+        self.sci_call(SCI_STYLESETFORE, element as usize, color as isize);
+    }
+
+    pub fn style_set_back(&self, element: u32, color: u32) {
+        self.sci_call(SCI_STYLESETBACK, element as usize, color as isize);
+    }
+
     pub fn set_lexer_elem_color(&self, elem: u32, fore: u32, back: u32) {
-        self.sci_call(SCI_STYLESETFORE, elem as usize, fore as isize);
-        self.sci_call(SCI_STYLESETBACK, elem as usize, back as isize);
+        self.style_set_fore(elem, fore);
+        self.style_set_back(elem, back);
     }
 
     pub fn set_key_words(&self, key_word_set: usize, key_words: Vec<&str>) {
@@ -370,12 +382,9 @@ impl ScintillaEdit {
 
     pub fn setup_caret(&self, width: usize, color: isize) {
         self.sci_call(SCI_SETCARETWIDTH, width, 0_isize);
-        self.sci_call(SCI_SETELEMENTCOLOUR, SC_ELEMENT_CARET as usize, color);
-        self.sci_call(
-            SCI_SETELEMENTCOLOUR,
-            SC_ELEMENT_CARET_LINE_BACK as usize,
-            0xFF3E342F,
-        );
+        // self.sci_call(SCI_SETELEMENTCOLOUR, SC_ELEMENT_CARET as usize, color);
+        self.set_element_colour(SC_ELEMENT_CARET, color);
+        self.set_element_colour(SC_ELEMENT_CARET_LINE_BACK, 0xFF3E342F);
     }
 
     pub fn on_resize(&self) {
