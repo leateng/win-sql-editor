@@ -19,6 +19,7 @@ use std::ffi::{CStr, CString};
 use std::ptr::null_mut;
 use std::{isize, mem};
 // use winapi;
+use winapi::um::winuser::{NMHDR, WM_KEYDOWN, WM_NOTIFY};
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
 static mut SCI_FN_DIRECT: SciFnDirect = None;
@@ -71,21 +72,6 @@ pub fn register_window_class() -> bool {
         status != 0
     }
 }
-
-// pub struct WString {
-//     inner: Vec<u16>,
-// }
-
-// impl WString {
-//     pub fn from_str(s: &str) -> WString {
-//         let wide: Vec<u16> = OsStr::new(s).encode_wide().chain(Some(0)).collect();
-//         WString { inner: wide }
-//     }
-//
-//     pub fn as_ptr(&self) -> *const u16 {
-//         self.inner.as_ptr()
-//     }
-// }
 
 impl<'a> ScintillaEditBuilder<'a> {
     pub fn size(mut self, size: (i32, i32)) -> ScintillaEditBuilder<'a> {
@@ -161,38 +147,39 @@ impl<'a> ScintillaEditBuilder<'a> {
 
         // events, observe scintilla events on it's parent control
         let hwnd = out.handle.hwnd().unwrap();
-        let edit2 = out.clone();
+        let edit_control = out.clone();
         let _ = nwg::bind_raw_event_handler(&parent, 0xFFFF + 100, move |_hwnd, msg, _w, l| {
-            // use winapi::shared::minwindef::{HIWORD, LOWORD};
-            use winapi::um::winuser::{NMHDR, WM_NOTIFY};
-
             if msg == WM_NOTIFY {
                 let nmhdr: &NMHDR = unsafe { &*(l as *const NMHDR) };
                 let scn: &SCNotification = unsafe { &*(l as *const SCNotification) };
+
+                // println!("nmhdr.hwndFrom==hwnd: {:?}", nmhdr.hwndFrom == hwnd);
+                // println!("nmhdr.code==SCN_KEY: {:?}", nmhdr.code == SCN_KEY);
 
                 // handle the message send from current scintilla control
                 if nmhdr.hwndFrom == hwnd {
                     match nmhdr.code {
                         SCN_MODIFIED => {
-                            edit2.sci_call(SCI_COLOURISE, 0, -1);
+                            edit_control.sci_call(SCI_COLOURISE, 0, -1);
 
                             if scn.linesAdded != 0 {
-                                edit2.update_line_number();
+                                edit_control.update_line_number();
                             }
-
-                            // 例如 SCN_MODIFIED 事件
-                            // println!("Text modified!");
-                            // let scn: &SCNotification = unsafe { &*(w as *const SCNotification) };
-                            // println!("scn = {:?}", scn);
                         }
 
                         SCN_ZOOM => {
-                            edit2.update_line_number();
+                            edit_control.update_line_number();
+                        }
+
+                        SCN_KEY => {
+                            println!("ch={}", scn.ch);
+                            println!("modifer={}", scn.modifiers);
                         }
                         _ => {}
                     }
                 }
             }
+
             None
         });
 
