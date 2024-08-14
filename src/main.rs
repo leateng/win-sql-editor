@@ -8,7 +8,7 @@ extern crate native_windows_gui as nwg;
 
 use crate::scintilla::{register_window_class, ScintillaEdit};
 use nwd::NwgUi;
-// use nwg::Event;
+use nwg::Event;
 use nwg::NativeUi;
 // use tokio;
 // use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_VISIBLE};
@@ -70,7 +70,11 @@ pub struct BasicApp {
     layout: nwg::FlexboxLayout,
 
     #[nwg_control()]
-    #[nwg_events(OnResize:[ScintillaEdit::on_resize(CTRL)], OnInit: [ScintillaEdit::setup_event(CTRL)])]
+    #[nwg_events(
+        OnResize:[ScintillaEdit::on_resize(CTRL)],
+        OnInit: [ScintillaEdit::setup_event(CTRL)],
+        OnKeyPress: [ScintillaEdit::on_key_press(CTRL, EVT_DATA)]
+    )]
     #[nwg_layout_item(layout: layout,
         margin: MARGIN_0,
         max_size: Size { width: D::Percent(1.0), height: D::Auto},

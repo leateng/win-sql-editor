@@ -11,7 +11,7 @@ use crate::lexilla::{
 use crate::lexilla::{SCE_SQL_COMMENT, SCE_SQL_COMMENTLINE};
 // use nwg::TabsContainer;
 // use nwg::{bind_raw_event_handler, Event, EventData, RawEventHandler};
-use nwg::{ControlBase, ControlHandle, NwgError};
+use nwg::{ControlBase, ControlHandle, EventData, NwgError};
 use std::ffi::{CStr, CString};
 // use std::cell::RefCell;
 // use std::ffi::OsStr;
@@ -171,10 +171,6 @@ impl<'a> ScintillaEditBuilder<'a> {
                             edit_control.update_line_number();
                         }
 
-                        SCN_KEY => {
-                            println!("ch={}", scn.ch);
-                            println!("modifer={}", scn.modifiers);
-                        }
                         _ => {}
                     }
                 }
@@ -447,6 +443,18 @@ impl ScintillaEdit {
     pub fn on_resize(&self) {
         println!("resize scintilla");
     }
+
+    pub fn on_key_press(&self, event_data: &EventData) {
+        match event_data {
+            EventData::OnKey(key_code) => {
+                if *key_code == nwg::keys::F5 {
+                    println!("format selection key={:?}", key_code);
+                }
+            }
+            _ => (),
+        }
+    }
+
     pub fn setup_event(&self) {
         println!("setup scintilla event");
     }
