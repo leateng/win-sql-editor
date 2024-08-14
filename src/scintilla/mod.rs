@@ -328,7 +328,7 @@ impl ScintillaEdit {
         self.set_lexer_elem_color(STYLE_DEFAULT, default_fg, default_bg);
 
         // line number
-        self.set_lexer_elem_color(STYLE_LINENUMBER, default_fg, default_bg);
+        self.set_lexer_elem_color(STYLE_LINENUMBER, comment_fg, default_bg);
 
         //sql default
         self.set_lexer_elem_color(SCE_SQL_DEFAULT, default_fg, default_bg);
