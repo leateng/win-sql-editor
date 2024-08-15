@@ -121,6 +121,7 @@ impl<'a> ScintillaEditBuilder<'a> {
             )
         };
 
+        out.set_code_page(SC_CP_UTF8);
         out.set_technology(SC_TECHNOLOGY_DIRECTWRITERETAIN as usize);
         out.set_font_quality(SC_EFF_QUALITY_ANTIALIASED as usize);
         out.set_wrap_mode(SC_WRAP_WORD as usize);
@@ -423,6 +424,22 @@ impl ScintillaEdit {
         self.sci_call(SCI_GETLINECOUNT, 0 as usize, 0 as isize) as usize
     }
 
+    pub fn set_code_page(&self, code_page: u32) {
+        self.sci_call(SCI_SETCODEPAGE, code_page as usize, 0 as isize);
+    }
+
+    pub fn get_selection_start(&self) -> usize {
+        self.sci_call(SCI_GETSELECTIONSTART, 0 as usize, 0 as isize) as usize
+    }
+
+    pub fn get_selection_end(&self) -> usize {
+        self.sci_call(SCI_GETSELECTIONEND, 0 as usize, 0 as isize) as usize
+    }
+
+    pub fn get_sel_text(&self) -> usize {
+        self.sci_call(SCI_GETSELECTIONEND, 0 as usize, 0 as isize) as usize
+    }
+
     pub fn text_width(&self, style: u32, text: &str) -> u32 {
         let c_string = CString::new(text).expect("CString::new failed");
         self.sci_call(
@@ -448,7 +465,10 @@ impl ScintillaEdit {
         match event_data {
             EventData::OnKey(key_code) => {
                 if *key_code == nwg::keys::F5 {
-                    println!("format selection key={:?}", key_code);
+                    let start = self.get_selection_start();
+                    let end = self.get_selection_end();
+
+                    println!("format selection [start, end]=[{:?}, {:?}]", start, end);
                 }
             }
             _ => (),
