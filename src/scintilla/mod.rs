@@ -1,5 +1,6 @@
 mod bindings;
 pub use bindings::*;
+use winapi::ctypes::c_uchar;
 
 extern crate native_windows_gui as nwg;
 use crate::lexilla::{
@@ -17,6 +18,7 @@ use std::ffi::{CStr, CString};
 // use std::ffi::OsStr;
 // use std::os::windows::ffi::OsStrExt;
 use std::ptr::null_mut;
+use std::str::FromStr;
 use std::{isize, mem};
 // use winapi;
 use winapi::um::winuser::{NMHDR, WM_KEYDOWN, WM_NOTIFY};
@@ -436,8 +438,20 @@ impl ScintillaEdit {
         self.sci_call(SCI_GETSELECTIONEND, 0 as usize, 0 as isize) as usize
     }
 
-    pub fn get_sel_text(&self) -> usize {
-        self.sci_call(SCI_GETSELECTIONEND, 0 as usize, 0 as isize) as usize
+    pub fn get_sel_text(&self) -> Option<String> {
+        let n = self.get_selection_end() - self.get_selection_start();
+        if n <= 0 {
+            return None;
+        }
+
+        let mut buffer: Vec<u8> = vec![0; n + 1];
+
+        self.sci_call(SCI_GETSELTEXT, 0 as usize, buffer.as_mut_ptr() as isize);
+        let str = CStr::from_bytes_with_nul(&buffer)
+            .unwrap()
+            .to_str()
+            .unwrap();
+        Some(str.to_owned())
     }
 
     pub fn text_width(&self, style: u32, text: &str) -> u32 {
@@ -469,6 +483,10 @@ impl ScintillaEdit {
                     let end = self.get_selection_end();
 
                     println!("format selection [start, end]=[{:?}, {:?}]", start, end);
+
+                    if let Some(text) = self.get_sel_text() {
+                        println!("text={:?}", text);
+                    }
                 }
             }
             _ => (),
