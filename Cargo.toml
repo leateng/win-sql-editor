@@ -20,6 +20,7 @@ sqlx = { version = "0.7", features = [
   "uuid",
   "json",
 ] }
+sqlparser = "0.50.0"
 
 [build-dependencies]
 cc = { version = "1.0", features = ["parallel"] }

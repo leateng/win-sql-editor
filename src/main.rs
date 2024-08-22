@@ -2,6 +2,7 @@
 
 mod lexilla;
 mod scintilla;
+mod sql_formatter;
 
 extern crate native_windows_derive as nwd;
 extern crate native_windows_gui as nwg;

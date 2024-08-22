@@ -10,6 +10,7 @@ use crate::lexilla::{
     SCE_SQL_USER2, SCE_SQL_USER3, SCE_SQL_USER4, SCE_SQL_WORD, SCE_SQL_WORD2,
 };
 use crate::lexilla::{SCE_SQL_COMMENT, SCE_SQL_COMMENTLINE};
+use crate::sql_formatter;
 // use nwg::TabsContainer;
 // use nwg::{bind_raw_event_handler, Event, EventData, RawEventHandler};
 use nwg::{ControlBase, ControlHandle, EventData, NwgError};
@@ -463,6 +464,15 @@ impl ScintillaEdit {
         ) as u32
     }
 
+    pub fn replace_sel(&self, text: &str) -> u32 {
+        let c_string = CString::new(text).expect("CString::new failed");
+        self.sci_call(
+            SCI_REPLACESEL,
+            0 as usize,
+            c_string.as_c_str().as_ptr() as isize,
+        ) as u32
+    }
+
     pub fn update_line_number(&self) {
         let n = self.get_line_count();
         let result = format!("00{}", n);
@@ -477,19 +487,21 @@ impl ScintillaEdit {
 
     pub fn on_key_press(&self, event_data: &EventData) {
         match event_data {
-            EventData::OnKey(key_code) => {
-                if *key_code == nwg::keys::F5 {
-                    let start = self.get_selection_start();
-                    let end = self.get_selection_end();
-
-                    println!("format selection [start, end]=[{:?}, {:?}]", start, end);
-
-                    if let Some(text) = self.get_sel_text() {
-                        println!("text={:?}", text);
-                    }
-                }
-            }
+            EventData::OnKey(key_code) => match *key_code {
+                nwg::keys::F5 => self.format_selection(),
+                _ => (),
+            },
             _ => (),
+        }
+    }
+
+    pub fn format_selection(&self) {
+        if let Some(text) = self.get_sel_text() {
+            println!("text={:?}", text);
+            // fmt selection text
+            let formatted_sql = sql_formatter::format_sql(text.as_str());
+            // replace selection with the formatted text
+            self.replace_sel(formatted_sql.as_str());
         }
     }
 
