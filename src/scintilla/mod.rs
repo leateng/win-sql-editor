@@ -27,6 +27,7 @@ use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
 static mut SCI_FN_DIRECT: SciFnDirect = None;
 
+// convert a hex color #RRGGBB string to gbr color code that scintilla accepted
 macro_rules! scintilla_rgb_color {
     ($hex:expr) => {{
         let hex = $hex.trim_start_matches('#');
