@@ -201,6 +201,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "data-fox"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "embed-resource",
+ "lazy_static",
+ "native-windows-derive",
+ "native-windows-gui",
+ "sqlparser",
+ "sqlx",
+ "tokio",
+ "winapi",
+]
+
+[[package]]
 name = "der"
 version = "0.7.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1814,21 +1829,6 @@ checksum = "a44ab49fad634e88f55bf8f9bb3abd2f27d7204172a112c7c9987e01c1c94ea9"
 dependencies = [
  "redox_syscall 0.4.1",
  "wasite",
-]
-
-[[package]]
-name = "win-sql-editor"
-version = "0.1.0"
-dependencies = [
- "cc",
- "embed-resource",
- "lazy_static",
- "native-windows-derive",
- "native-windows-gui",
- "sqlparser",
- "sqlx",
- "tokio",
- "winapi",
 ]
 
 [[package]]

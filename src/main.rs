@@ -67,7 +67,7 @@ pub struct BasicApp {
     #[nwg_control(
         size: (800, 600),
         position: (300, 300),
-        title: "SQL Editor",
+        title: "Data Fox",
         flags: "MAIN_WINDOW|VISIBLE",
         icon: Some(&nwg::Icon::from_embed(&data.embed, None, Some("IDI_APP_ICON")).unwrap())
     )]
