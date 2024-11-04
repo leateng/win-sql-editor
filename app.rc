@@ -1,2 +1,4 @@
 #define RT_MANIFEST 24
 1 RT_MANIFEST "app.manifest"
+MAINICON ICON "./res/app.ico"
+IDI_APP_ICON ICON "./res/app.ico"

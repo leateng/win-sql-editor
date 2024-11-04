@@ -8,11 +8,17 @@ extern crate native_windows_derive as nwd;
 extern crate native_windows_gui as nwg;
 
 use crate::scintilla::{register_window_class, ScintillaEdit};
+use lazy_static::lazy_static;
 use nwd::NwgUi;
+use nwg::EmbedResource;
 use nwg::Event;
 use nwg::NativeUi;
 // use tokio;
 // use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_VISIBLE};
+
+// lazy_static! {
+//     static ref EMBED: EmbedResource = nwg::EmbedResource::load(None).unwrap();
+// }
 
 use nwg::stretch::{
     geometry::{Rect, Size},
@@ -55,7 +61,16 @@ const MARGIN_0: Rect<D> = Rect {
 
 #[derive(Default, NwgUi)]
 pub struct BasicApp {
-    #[nwg_control(size: (800, 600), position: (300, 300), title: "SQL Editor", flags: "MAIN_WINDOW|VISIBLE")]
+    #[nwg_resource]
+    embed: nwg::EmbedResource,
+
+    #[nwg_control(
+        size: (800, 600),
+        position: (300, 300),
+        title: "SQL Editor",
+        flags: "MAIN_WINDOW|VISIBLE",
+        icon: Some(&nwg::Icon::from_embed(&data.embed, None, Some("IDI_APP_ICON")).unwrap())
+    )]
     #[nwg_events( OnWindowClose: [BasicApp::say_goodbye] , OnResize: [BasicApp::on_resize(SELF)])]
     window: nwg::Window,
 

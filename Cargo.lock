@@ -1822,6 +1822,7 @@ version = "0.1.0"
 dependencies = [
  "cc",
  "embed-resource",
+ "lazy_static",
  "native-windows-derive",
  "native-windows-gui",
  "sqlparser",
