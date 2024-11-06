@@ -25,6 +25,8 @@ use std::{isize, mem};
 use winapi::um::winuser::{NMHDR, WM_KEYDOWN, WM_NOTIFY};
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
+use sqlparser::parser::ParserError;
+
 static mut SCI_FN_DIRECT: SciFnDirect = None;
 
 // convert a hex color #RRGGBB string to gbr color code that scintilla accepted
@@ -500,9 +502,28 @@ impl ScintillaEdit {
         if let Some(text) = self.get_sel_text() {
             println!("text={:?}", text);
             // fmt selection text
-            let formatted_sql = sql_formatter::format_sql(text.as_str());
-            // replace selection with the formatted text
-            self.replace_sel(formatted_sql.as_str());
+            let format_result = sql_formatter::format_sql(text.as_str());
+            match format_result {
+                Ok(statements) => {
+                    let mut sql_vec: Vec<String> = Vec::new();
+                    for ast in statements.iter() {
+                        sql_vec.push(format!("{}", ast));
+                    }
+
+                    // replace selection with the formatted text
+                    self.replace_sel(sql_vec.join(";\n").as_str());
+                }
+                Err(e) => {
+                    let error_msg = match e {
+                        ParserError::TokenizerError(msg) => msg,
+                        ParserError::ParserError(msg) => msg,
+                        ParserError::RecursionLimitExceeded => {
+                            "Recusion limit exceeded!".to_owned()
+                        }
+                    };
+                    nwg::modal_error_message(self.handle, "Parse Error", error_msg.as_str());
+                }
+            }
         }
     }
 
