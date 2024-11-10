@@ -65,7 +65,7 @@ pub struct BasicApp {
     embed: nwg::EmbedResource,
 
     #[nwg_control(
-        size: (800, 600),
+        size: (1400, 900),
         position: (300, 300),
         title: "Data Fox",
         flags: "MAIN_WINDOW|VISIBLE",

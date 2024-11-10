@@ -28,6 +28,7 @@ use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 use sqlparser::parser::ParserError;
 
 static mut SCI_FN_DIRECT: SciFnDirect = None;
+static PG_KEYWORDS: &str = include_str!("../../lang/postgres");
 
 // convert a hex color #RRGGBB string to gbr color code that scintilla accepted
 macro_rules! scintilla_rgb_color {
@@ -141,14 +142,27 @@ impl<'a> ScintillaEditBuilder<'a> {
 
         let ilexer = create_lexer("sql").unwrap();
         out.set_ilexer(ilexer);
-        out.set_key_words(
-            1,
-            vec![
-                "select", "from", "where", "create", "delete", "update", "drop", "table", "in",
-                "and", "or", "left", "right", "join", "inner", "alter", "default", "order", "by",
-                "desc", "asc", "group", "having", "not", "null", "limit", "add", "column",
-            ],
-        );
+
+        let pg_words: Vec<&str> = PG_KEYWORDS.split("====\r\n").collect();
+        let pg_types: Vec<&str> = pg_words[0]
+            .split("\r\n")
+            .filter(|&s| !s.is_empty())
+            .collect();
+        let pg_keywords: Vec<&str> = pg_words[1]
+            .split("\r\n")
+            .filter(|&s| !s.is_empty())
+            .collect();
+
+        println!("pg_keywords: {:?}", pg_keywords);
+        out.set_key_words(1, pg_keywords);
+        // out.set_key_words(
+        //     1,
+        //     vec![
+        //         "select", "from", "where", "create", "delete", "update", "drop", "table", "in",
+        //         "and", "or", "left", "right", "join", "inner", "alter", "default", "order", "by",
+        //         "desc", "asc", "group", "having", "not", "null", "limit", "add", "column",
+        //     ],
+        // );
         out.setup_color_scheme();
         out.setup_caret(2, 0xFFE75C27);
 
@@ -317,7 +331,7 @@ impl ScintillaEdit {
     }
 
     pub fn set_key_words(&self, key_word_set: usize, key_words: Vec<&str>) {
-        let combined_string: String = key_words.join(" ");
+        let combined_string: String = key_words.join(" ").to_lowercase();
         let kws = CString::new(combined_string).unwrap();
         self.sci_call(SCI_SETKEYWORDS, key_word_set, kws.as_ptr() as isize);
     }
