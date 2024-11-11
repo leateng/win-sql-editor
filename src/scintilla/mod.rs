@@ -153,7 +153,8 @@ impl<'a> ScintillaEditBuilder<'a> {
             .filter(|&s| !s.is_empty())
             .collect();
 
-        println!("pg_keywords: {:?}", pg_keywords);
+        // println!("pg_keywords: {:?}", pg_keywords);
+        out.set_key_words(0, pg_types);
         out.set_key_words(1, pg_keywords);
         // out.set_key_words(
         //     1,
@@ -337,12 +338,13 @@ impl ScintillaEdit {
     }
 
     pub fn setup_color_scheme(&self) {
-        let default_bg = scintilla_rgb_color!("#282C34");
-        let default_fg = scintilla_rgb_color!("#ABB2BF");
-        let comment_fg = scintilla_rgb_color!("#7F848E");
-        let number_fg = scintilla_rgb_color!("#D19A66");
-        let keyword_fg = scintilla_rgb_color!("#C678DD");
-        let string_fg = scintilla_rgb_color!("#98C379");
+        let default_bg = scintilla_rgb_color!("#24273a");
+        let default_fg = scintilla_rgb_color!("#cad3f5");
+        let comment_fg = scintilla_rgb_color!("#939ab7");
+        let number_fg = scintilla_rgb_color!("#d29373");
+        let keyword_fg = scintilla_rgb_color!("#c6a0f6");
+        let type_fg = scintilla_rgb_color!("#d1bc91");
+        let string_fg = scintilla_rgb_color!("#a6da95");
 
         // style defines
         // default
@@ -366,8 +368,8 @@ impl ScintillaEdit {
         // number
         self.set_lexer_elem_color(SCE_SQL_NUMBER, number_fg, default_bg);
 
-        // keyword
-        self.set_lexer_elem_color(SCE_SQL_WORD, keyword_fg, default_bg);
+        // data type
+        self.set_lexer_elem_color(SCE_SQL_WORD, type_fg, default_bg);
 
         // double quote string
         self.set_lexer_elem_color(SCE_SQL_STRING, string_fg, default_bg);

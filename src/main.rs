@@ -71,7 +71,7 @@ pub struct BasicApp {
         flags: "MAIN_WINDOW|VISIBLE",
         icon: Some(&nwg::Icon::from_embed(&data.embed, None, Some("IDI_APP_ICON")).unwrap())
     )]
-    #[nwg_events( OnWindowClose: [BasicApp::say_goodbye] , OnResize: [BasicApp::on_resize(SELF)])]
+    #[nwg_events( OnWindowClose: [BasicApp::say_goodbye] , OnResize: [BasicApp::on_resize(SELF)], OnInit: [BasicApp::on_init(SELF)])]
     window: nwg::Window,
 
     // #[nwg_layout(parent: window, spacing: 2, min_size: [150, 140])]
@@ -100,6 +100,10 @@ pub struct BasicApp {
 }
 
 impl BasicApp {
+    fn on_init(&self) {
+        self.center_window();
+    }
+
     fn say_goodbye(&self) {
         // nwg::simple_message("Goodbye", &format!("Goodbye {}", "123"));
         nwg::stop_thread_dispatch();
@@ -108,6 +112,18 @@ impl BasicApp {
     fn on_resize(&self) {
         // self.scintilla.size(self.window.set_size(x, y)
         println!("window size = {:?}", self.window.size());
+    }
+
+    fn center_window(&self) {
+        let screen_width = nwg::Monitor::width();
+        let screen_height = nwg::Monitor::height();
+
+        let (win_width, win_height) = self.window.size();
+
+        let x = (screen_width - win_width as i32) / 2;
+        let y = (screen_height - win_height as i32) / 2;
+
+        self.window.set_position(x, y);
     }
 }
 
