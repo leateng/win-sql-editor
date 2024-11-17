@@ -8,10 +8,10 @@ extern crate native_windows_derive as nwd;
 extern crate native_windows_gui as nwg;
 
 use crate::scintilla::{register_window_class, ScintillaEdit};
-use lazy_static::lazy_static;
+// use lazy_static::lazy_static;
 use nwd::NwgUi;
-use nwg::EmbedResource;
-use nwg::Event;
+// use nwg::EmbedResource;
+// use nwg::Event;
 use nwg::NativeUi;
 // use tokio;
 // use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_VISIBLE};

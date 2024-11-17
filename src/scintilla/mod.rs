@@ -1,6 +1,6 @@
 mod bindings;
 pub use bindings::*;
-use winapi::ctypes::c_uchar;
+// use winapi::ctypes::c_uchar;
 
 extern crate native_windows_gui as nwg;
 use crate::lexilla::{
@@ -19,10 +19,10 @@ use std::ffi::{CStr, CString};
 // use std::ffi::OsStr;
 // use std::os::windows::ffi::OsStrExt;
 use std::ptr::null_mut;
-use std::str::FromStr;
+// use std::str::FromStr;
 use std::{isize, mem};
 // use winapi;
-use winapi::um::winuser::{NMHDR, WM_KEYDOWN, WM_NOTIFY};
+use winapi::um::winuser::{NMHDR, WM_NOTIFY};
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
 use sqlparser::parser::ParserError;
@@ -134,7 +134,7 @@ impl<'a> ScintillaEditBuilder<'a> {
         out.set_wrap_mode(SC_WRAP_WORD as usize);
         out.set_wrap_visual_flags(SC_WRAPVISUALFLAG_START as usize);
         out.set_eol_mode(SC_EOL_CRLF as usize);
-        out.set_tab_width(2 as usize);
+        out.set_tab_width(2);
         out.set_end_at_last_line(true);
         out.set_ime_interaction(SC_IME_INLINE as usize);
         out.style_set_font(STYLE_DEFAULT as usize, "Cascadia Code");
