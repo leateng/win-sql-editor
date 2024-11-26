@@ -424,7 +424,7 @@ impl ScintillaEdit {
     pub fn setup_caret(&self, width: u32, color: isize) {
         self.set_caret_width(width);
         self.set_element_colour(SC_ELEMENT_CARET, color);
-        self.set_element_colour(SC_ELEMENT_CARET_LINE_BACK, 0xFF3E342F);
+        self.set_element_colour(SC_ELEMENT_CARET_LINE_BACK, 0xFF473330);
     }
 
     // margin functions
