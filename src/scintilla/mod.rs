@@ -30,7 +30,7 @@ use sqlparser::parser::ParserError;
 static mut SCI_FN_DIRECT: SciFnDirect = None;
 static PG_KEYWORDS: &str = include_str!("../../lang/postgres");
 
-// convert a hex color #RRGGBB string to gbr color code that scintilla accepted
+// convert a hex color #RRGGBB string to bgr color code that scintilla accepted
 macro_rules! scintilla_rgb_color {
     ($hex:expr) => {{
         let hex = $hex.trim_start_matches('#');
@@ -345,6 +345,8 @@ impl ScintillaEdit {
         let keyword_fg = scintilla_rgb_color!("#c6a0f6");
         let type_fg = scintilla_rgb_color!("#d1bc91");
         let string_fg = scintilla_rgb_color!("#a6da95");
+        let operator_fg = scintilla_rgb_color!("##91d7e3");
+        let identifer_fg = scintilla_rgb_color!("#eed49f");
 
         // style defines
         // default
@@ -378,37 +380,37 @@ impl ScintillaEdit {
         self.set_lexer_elem_color(SCE_SQL_CHARACTER, string_fg, default_bg);
 
         // sql plus
-        self.set_lexer_elem_color(SCE_SQL_SQLPLUS, 0xFF000, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_SQLPLUS, 0x0000FF, default_bg);
 
         // sql plus prompt
-        self.set_lexer_elem_color(SCE_SQL_SQLPLUS_PROMPT, 0xFF000, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_SQLPLUS_PROMPT, 0x000FF, default_bg);
 
         // operator
-        self.set_lexer_elem_color(SCE_SQL_OPERATOR, default_fg, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_OPERATOR, operator_fg, default_bg);
 
         // identifer
-        self.set_lexer_elem_color(SCE_SQL_IDENTIFIER, default_fg, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_IDENTIFIER, identifer_fg, default_bg);
 
         // word2
         self.set_lexer_elem_color(SCE_SQL_WORD2, keyword_fg, default_bg);
 
-        // comment doc word
-        self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORD, 0xFF0000, default_bg);
-
-        // comment doc word error
-        self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORDERROR, 0xFF0000, default_bg);
+        // // comment doc word
+        // self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORD, 0xFF0000, default_bg);
+        //
+        // // comment doc word error
+        // self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORDERROR, 0xFF0000, default_bg);
 
         // user1
-        self.set_lexer_elem_color(SCE_SQL_USER1, 0xFF0000, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_USER1, 0x0000FF, default_bg);
 
         // user2
-        self.set_lexer_elem_color(SCE_SQL_USER2, 0xFF0000, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_USER2, 0x0000FF, default_bg);
 
         // user3
-        self.set_lexer_elem_color(SCE_SQL_USER3, 0xFF0000, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_USER3, 0x0000FF, default_bg);
 
         // user4
-        self.set_lexer_elem_color(SCE_SQL_USER4, 0xFF0000, default_bg);
+        self.set_lexer_elem_color(SCE_SQL_USER4, 0x0000FF, default_bg);
 
         self.set_margins(2);
         self.set_margin_type_n(0, SC_MARGIN_NUMBER);
