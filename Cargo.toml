@@ -22,6 +22,7 @@ sqlx = { version = "0.8", features = [
 ] }
 sqlparser = "0.51.0"
 lazy_static = "1.5.0"
+sqlformat = "*"
 
 [build-dependencies]
 cc = { version = "1.0", features = ["parallel"] }

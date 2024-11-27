@@ -521,27 +521,29 @@ impl ScintillaEdit {
             println!("text={:?}", text);
             // fmt selection text
             let format_result = sql_formatter::format_sql(text.as_str());
-            match format_result {
-                Ok(statements) => {
-                    let mut sql_vec: Vec<String> = Vec::new();
-                    for ast in statements.iter() {
-                        sql_vec.push(format!("{}", ast));
-                    }
+            self.replace_sel(format_result.as_str());
 
-                    // replace selection with the formatted text
-                    self.replace_sel(sql_vec.join(";\n").as_str());
-                }
-                Err(e) => {
-                    let error_msg = match e {
-                        ParserError::TokenizerError(msg) => msg,
-                        ParserError::ParserError(msg) => msg,
-                        ParserError::RecursionLimitExceeded => {
-                            "Recusion limit exceeded!".to_owned()
-                        }
-                    };
-                    nwg::modal_error_message(self.handle, "Parse Error", error_msg.as_str());
-                }
-            }
+            // match format_result {
+            //     Ok(statements) => {
+            //         let mut sql_vec: Vec<String> = Vec::new();
+            //         for ast in statements.iter() {
+            //             sql_vec.push(format!("{}", ast));
+            //         }
+            //
+            //         // replace selection with the formatted text
+            //         self.replace_sel(sql_vec.join(";\n").as_str());
+            //     }
+            //     Err(e) => {
+            //         let error_msg = match e {
+            //             ParserError::TokenizerError(msg) => msg,
+            //             ParserError::ParserError(msg) => msg,
+            //             ParserError::RecursionLimitExceeded => {
+            //                 "Recusion limit exceeded!".to_owned()
+            //             }
+            //         };
+            //         nwg::modal_error_message(self.handle, "Parse Error", error_msg.as_str());
+            //     }
+            // }
         }
     }
 

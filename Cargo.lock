@@ -209,6 +209,7 @@ dependencies = [
  "lazy_static",
  "native-windows-derive",
  "native-windows-gui",
+ "sqlformat",
  "sqlparser",
  "sqlx",
  "tokio",
