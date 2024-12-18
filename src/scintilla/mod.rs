@@ -166,6 +166,7 @@ impl<'a> ScintillaEditBuilder<'a> {
         // );
         out.setup_color_scheme();
         out.setup_caret(2, 0xFFE75C27);
+        out.set_selection_background(0xFF5a4745);
 
         // events, observe scintilla events on it's parent control
         let hwnd = out.handle.hwnd().unwrap();
@@ -425,6 +426,10 @@ impl ScintillaEdit {
         self.set_caret_width(width);
         self.set_element_colour(SC_ELEMENT_CARET, color);
         self.set_element_colour(SC_ELEMENT_CARET_LINE_BACK, 0xFF473330);
+    }
+
+    pub fn set_selection_background(&self, colouralpha: isize) {
+        self.set_element_colour(SC_ELEMENT_SELECTION_BACK, colouralpha);
     }
 
     // margin functions
