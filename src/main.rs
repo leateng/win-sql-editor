@@ -65,8 +65,8 @@ pub struct BasicApp {
     embed: nwg::EmbedResource,
 
     #[nwg_control(
-        size: (1400, 900),
-        position: (300, 300),
+        maximized: true,
+        position: (0, 0),
         title: "Data Fox",
         flags: "MAIN_WINDOW|VISIBLE",
         icon: Some(&nwg::Icon::from_embed(&data.embed, None, Some("IDI_APP_ICON")).unwrap())
@@ -101,7 +101,7 @@ pub struct BasicApp {
 
 impl BasicApp {
     fn on_init(&self) {
-        self.center_window();
+        // self.center_window();
     }
 
     fn say_goodbye(&self) {
