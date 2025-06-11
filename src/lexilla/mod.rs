@@ -1,7 +1,9 @@
 mod bindings;
-mod constants;
+// mod constants;
+mod sci_lexer;
 pub use bindings::*;
-pub use constants::*;
+// pub use constants::*;
+pub use sci_lexer::*;
 
 use std::ffi::{CStr, CString};
 

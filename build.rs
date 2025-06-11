@@ -1,11 +1,11 @@
 extern crate embed_resource;
-use std::fs;
 
 use cc::Build;
+use std::fs;
 
 fn main() {
     println!("cargo:rerun-if-changed=app.rc");
-    embed_resource::compile("app.rc", embed_resource::NONE);
+    let _ = embed_resource::compile("app.rc", embed_resource::NONE);
 
     let mut scintilla_build = cc::Build::new();
     scintilla_build
@@ -17,6 +17,9 @@ fn main() {
     scintilla_build
         .file("./deps/scintilla/win32/HanjaDic.cxx")
         .file("./deps/scintilla/win32/PlatWin.cxx")
+        .file("./deps/scintilla/win32/ListBox.cxx")
+        .file("./deps/scintilla/win32/SurfaceGDI.cxx")
+        .file("./deps/scintilla/win32/SurfaceD2D.cxx")
         .file("./deps/scintilla/win32/ScintillaWin.cxx")
         .compile("scintilla");
 

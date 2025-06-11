@@ -20,13 +20,15 @@ sqlx = { version = "0.8", features = [
   "uuid",
   "json",
 ] }
-sqlparser = "0.51.0"
+sqlparser = "0.56.0"
 lazy_static = "1.5.0"
 sqlformat = "*"
+taffy = "0.8.3"
+anyhow = "*"
 
 [build-dependencies]
-cc = { version = "1.0", features = ["parallel"] }
-embed-resource = "2.4.3"
+cc = { version = "1.2.26", features = ["parallel"] }
+embed-resource = "3.0.3"
 # bindgen = "*"
 
 [profile.release]

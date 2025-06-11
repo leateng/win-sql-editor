@@ -26,6 +26,8 @@ use winapi::um::winuser::{NMHDR, WM_NOTIFY};
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
 use sqlparser::parser::ParserError;
+use sqlx::postgres::{PgPool, PgPoolOptions};
+use std::rc::Rc;
 
 static mut SCI_FN_DIRECT: SciFnDirect = None;
 static PG_KEYWORDS: &str = include_str!("../../lang/postgres");
@@ -53,15 +55,20 @@ pub struct ScintillaEditBuilder<'a> {
     parent: Option<ControlHandle>,
 }
 
-#[derive(Default, PartialEq, Clone)]
+#[derive(Default, Clone)]
 pub struct ScintillaEdit {
     pub handle: ControlHandle,
     sci_direct_ptr: sptr_t,
 }
 
+impl PartialEq for ScintillaEdit {
+    fn eq(&self, other: &Self) -> bool {
+        self.handle == other.handle
+    }
+}
+
 impl PartialEq<ScintillaEdit> for ControlHandle {
     fn eq(&self, other: &ScintillaEdit) -> bool {
-        println!("PartialEq");
         *self == other.handle
     }
 }
@@ -128,6 +135,12 @@ impl<'a> ScintillaEditBuilder<'a> {
             )
         };
 
+        // out.db = PgPoolOptions::new()
+        //     .max_connections(5)
+        //     .connect("postgres://postgres:password@localhost/test")
+        //     .await?
+        //     .into();
+
         out.set_code_page(SC_CP_UTF8);
         out.set_technology(SC_TECHNOLOGY_DIRECTWRITERETAIN as usize);
         out.set_font_quality(SC_EFF_QUALITY_ANTIALIASED as usize);
@@ -165,7 +178,7 @@ impl<'a> ScintillaEditBuilder<'a> {
         //     ],
         // );
         out.setup_color_scheme();
-        out.setup_caret(2, 0xFFE75C27);
+        out.setup_caret(3, 0xFFE75C27);
         out.set_selection_background(0xFF5a4745);
 
         // events, observe scintilla events on it's parent control
@@ -344,10 +357,12 @@ impl ScintillaEdit {
         let comment_fg = scintilla_rgb_color!("#939ab7");
         let number_fg = scintilla_rgb_color!("#d29373");
         let keyword_fg = scintilla_rgb_color!("#c6a0f6");
-        let type_fg = scintilla_rgb_color!("#d1bc91");
+        // let type_fg = scintilla_rgb_color!("#d1bc91");
+        let type_fg = scintilla_rgb_color!("#eed49f");
         let string_fg = scintilla_rgb_color!("#a6da95");
         let operator_fg = scintilla_rgb_color!("##91d7e3");
-        let identifer_fg = scintilla_rgb_color!("#eed49f");
+        // let identifer_fg = scintilla_rgb_color!("#d8dee9");
+        let identifer_fg = scintilla_rgb_color!("#cad3f5");
 
         // style defines
         // default
@@ -515,6 +530,7 @@ impl ScintillaEdit {
         match event_data {
             EventData::OnKey(key_code) => match *key_code {
                 nwg::keys::F5 => self.format_selection(),
+                nwg::keys::F9 => self.execute_selection(),
                 _ => (),
             },
             _ => (),
@@ -549,6 +565,12 @@ impl ScintillaEdit {
             //         nwg::modal_error_message(self.handle, "Parse Error", error_msg.as_str());
             //     }
             // }
+        }
+    }
+
+    pub fn execute_selection(&self) {
+        if let Some(text) = self.get_sel_text() {
+            println!("execute sql:\n{:?}", text);
         }
     }
 

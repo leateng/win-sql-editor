@@ -1,4 +1,4 @@
-use sqlformat::{format, FormatOptions, QueryParams};
+use sqlformat::{format, FormatOptions, Indent, QueryParams};
 use sqlparser::ast::Statement;
 use sqlparser::dialect::PostgreSqlDialect;
 use sqlparser::parser::Parser;
@@ -17,6 +17,11 @@ use sqlparser::parser::ParserError;
 // }
 
 pub fn format_sql(sql: &str) -> String {
-    let formatted_sql = format(sql, &QueryParams::None, FormatOptions::default());
+    let format_options = FormatOptions {
+        indent: Indent::Spaces(2),
+        uppercase: true,
+        lines_between_queries: 2,
+    };
+    let formatted_sql = format(sql, &QueryParams::None, format_options);
     return formatted_sql;
 }

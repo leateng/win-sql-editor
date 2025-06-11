@@ -12,7 +12,12 @@ use crate::scintilla::{register_window_class, ScintillaEdit};
 use nwd::NwgUi;
 // use nwg::EmbedResource;
 // use nwg::Event;
+use anyhow::Result;
 use nwg::NativeUi;
+use sqlx::postgres::{PgPool, PgPoolOptions};
+use std::cell::RefCell;
+use std::sync::{Arc, Mutex};
+use tokio::runtime::Runtime;
 // use tokio;
 // use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_MAXIMIZEBOX, WS_MINIMIZEBOX, WS_VISIBLE};
 
@@ -61,6 +66,8 @@ const MARGIN_0: Rect<D> = Rect {
 
 #[derive(Default, NwgUi)]
 pub struct BasicApp {
+    db_pool: RefCell<Option<PgPool>>,
+
     #[nwg_resource]
     embed: nwg::EmbedResource,
 
@@ -69,7 +76,6 @@ pub struct BasicApp {
         position: (0, 0),
         title: "Data Fox",
         flags: "MAIN_WINDOW|VISIBLE",
-        icon: Some(&nwg::Icon::from_embed(&data.embed, None, Some("IDI_APP_ICON")).unwrap())
     )]
     #[nwg_events( OnWindowClose: [BasicApp::say_goodbye] , OnResize: [BasicApp::on_resize(SELF)], OnInit: [BasicApp::on_init(SELF)])]
     window: nwg::Window,
@@ -102,6 +108,13 @@ pub struct BasicApp {
 impl BasicApp {
     fn on_init(&self) {
         // self.center_window();
+        // let em = &self.embed;
+        // let icon = em.icon_str("MAINICON", None);
+        // if icon == None {
+        //     println!("icon is None")
+        // }
+
+        // self.window.set_icon(em.icon_str("MAINICON", None).as_ref());
     }
 
     fn say_goodbye(&self) {
@@ -128,11 +141,22 @@ impl BasicApp {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), sqlx::Error> {
     nwg::init().expect("Failed to init Native Windows GUI");
     nwg::Font::set_global_family("Segoe UI Emoji").expect("set global font family error!");
     register_window_class();
 
-    let _app = BasicApp::build_ui(Default::default()).expect("Failed to build UI");
+    let app = BasicApp::build_ui(Default::default()).expect("Failed to build UI");
+
+    let db_path = "sqlite:my_database.db?mode=rwc";
+    let pool = PgPoolOptions::new()
+        .max_connections(5)
+        .connect(db_path)
+        .await?;
+
+    app.db_pool.borrow_mut().replace(pool);
+
     nwg::dispatch_thread_events();
+
+    Ok(())
 }
