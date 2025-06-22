@@ -25,9 +25,9 @@ use std::{isize, mem};
 use winapi::um::winuser::{NMHDR, WM_NOTIFY};
 use winapi::um::winuser::{WS_CHILD, WS_EX_CLIENTEDGE, WS_VISIBLE};
 
-use sqlparser::parser::ParserError;
-use sqlx::postgres::{PgPool, PgPoolOptions};
-use std::rc::Rc;
+// use sqlparser::parser::ParserError;
+// use sqlx::postgres::{PgPool, PgPoolOptions};
+// use std::rc::Rc;
 
 static mut SCI_FN_DIRECT: SciFnDirect = None;
 static PG_KEYWORDS: &str = include_str!("../../lang/postgres");
@@ -410,11 +410,11 @@ impl ScintillaEdit {
         // word2
         self.set_lexer_elem_color(SCE_SQL_WORD2, keyword_fg, default_bg);
 
-        // // comment doc word
-        // self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORD, 0xFF0000, default_bg);
-        //
-        // // comment doc word error
-        // self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORDERROR, 0xFF0000, default_bg);
+        // comment doc word
+        self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORD, 0xFF0000, default_bg);
+
+        // comment doc word error
+        self.set_lexer_elem_color(SCE_SQL_COMMENTDOCKEYWORDERROR, 0xFF0000, default_bg);
 
         // user1
         self.set_lexer_elem_color(SCE_SQL_USER1, 0x0000FF, default_bg);

@@ -16,6 +16,7 @@ use anyhow::Result;
 use nwg::NativeUi;
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::cell::RefCell;
+use std::env;
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 // use tokio;
@@ -148,12 +149,11 @@ async fn main() -> Result<(), sqlx::Error> {
 
     let app = BasicApp::build_ui(Default::default()).expect("Failed to build UI");
 
-    let db_path = "sqlite:my_database.db?mode=rwc";
+    let db_path = env::var("db_path").unwrap();
     let pool = PgPoolOptions::new()
         .max_connections(5)
-        .connect(db_path)
+        .connect(db_path.as_str())
         .await?;
-
     app.db_pool.borrow_mut().replace(pool);
 
     nwg::dispatch_thread_events();
